@@ -12,3 +12,59 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+model Accounts {
+  account_id    Int     @id @default(autoincrement()) @map("account_id")
+  email         String  @unique @map("email")
+  password      String  @map("password")
+  account_name  String  @unique @map("account_name")
+  money         Int     @map("money")
+  mmr           Int     @map("mmr")
+
+  myPlayers MyPlayers[]
+  squad     Squad?
+
+  @@map("Accounts")
+}
+
+model Players {
+  player_id Int     @id @default(autoincrement()) @map("player_id")
+  player_name       String  @map("player_name")
+  player_speed      Int  @map("player_speed")
+  player_finish     Int  @default(500) @map("player_finish") 
+  player_power      Int  @default(100) @map("player_power")  
+  player_defense    Int  @default(100) @map("player_defense")  
+  player_stamina    Int  @default(10000) @map("player_stamina")
+
+  myPlayers MyPlayers[]
+
+  @@map("Players")
+}
+
+model MyPlayers {
+  myPlayer_id   Int     @id @map("myPlayer_id")
+  account_id    Int     @map("account_id")
+  player_id     Int     @map("player_id")
+  enhanced      Int     @map("enhanced")
+
+  accounts Accounts @relation(fields: [account_id], references: [account_id], onDelete: Cascade)
+  players Players @relation(fields: [player_id], references: [player_id], onDelete: Cascade)
+
+  @@map("MyPlayers")
+}
+
+model Squad {
+  squad_id      Int     @id @default(autoincrement()) @map("squad_id")
+  account_id    Int     @map("account_id")
+  squad_player1 Int     @map("squad_player1")
+  squad_player2 Int     @map("squad_player2")
+  squad_player3 Int     @map("squad_player3")
+
+  accounts Accounts @relation(fields: [account_id], references: [account_id], onDelete: Cascade)
+  players1 Players @relation(fields: [squad_player1], references: [player_id], onDelete: Cascade)
+  players2 Players @relation(fields: [squad_player2], references: [player_id], onDelete: Cascade)
+  players3 Players @relation(fields: [squad_player3], references: [player_id], onDelete: Cascade)
+
+  @@map("Squad")
+}
+
