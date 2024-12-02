@@ -18,7 +18,7 @@ model Accounts {
   email         String  @unique @map("email")
   password      String  @map("password")
   account_name  String  @unique @map("account_name")
-  money         Int     @map("money")
+  money         Int     @map("money")     @default(10000)
   mmr           Int     @map("mmr")
 
   myPlayers MyPlayers[]
