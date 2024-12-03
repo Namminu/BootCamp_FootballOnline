@@ -33,3 +33,5 @@ router.get('/players/:playerId', async (req, res, next) => {
     }
     return res.status(200).json({ players: player });
 })
+
+export default router;
