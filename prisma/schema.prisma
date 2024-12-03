@@ -42,7 +42,7 @@ model Players {
 }
 
 model MyPlayers {
-  myPlayer_id   Int      @id @map("myPlayer_id")
+  myPlayer_id   Int      @id @default(autoincrement()) @map("myPlayer_id")
   account_id    Int      @map("account_id")
   player_id     Int      @map("player_id")
   enhanced      Int      @map("enhanced")
