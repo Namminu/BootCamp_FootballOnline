@@ -17,6 +17,7 @@ router.post("/players/draw", authMiddleware, async (req, res, next) => {
     }
 
     // 선수 뽑기 로직
+    let existingPlayer;
     do {
       // 선수 테이블에서 랜덤 선수 가져오기
       const players = await prisma.players.findMany({});
@@ -28,7 +29,7 @@ router.post("/players/draw", authMiddleware, async (req, res, next) => {
       }
 
       // 캐릭터 보유 선수중 뽑힌 캐릭터가 있는지
-      let existingPlayer = await prisma.myPlayers.findFirst({
+      existingPlayer = await prisma.myPlayers.findFirst({
         where: {
           player_id: randomPlayer.player_id,
         },
@@ -62,6 +63,7 @@ router.post("/players/draw", authMiddleware, async (req, res, next) => {
         isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
       }
     );
+    if(!newPlayer) res.status(500).json({ message: "선수 뽑기 오류"});
 
     return res.status(200).json({ newPlayer, message: `남은 잔액 : ${account.money}` });
   } catch (err) {

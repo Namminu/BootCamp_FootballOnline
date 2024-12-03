@@ -9,7 +9,7 @@ const router = express.Router();
 router.post("/players/draw", authMiddleware, async (req, res, next) => {
   try {
     const account = req.account;
-    const { targetPlayer_id, meterials_id } = req.body;
+    const { targetPlayer_id, meterial_id } = req.body;
 
     // 강화 대상 보유 여부 확인
     let targetPlayer = await prisma.myPlayers.findFirst({
@@ -18,22 +18,40 @@ router.post("/players/draw", authMiddleware, async (req, res, next) => {
         account_id: account.account_id,
       },
     });
-    if(!targetPlayer) return res.status(404).json({ message:"해당 선수를 보유하지 않았습니다." });
+    if (!targetPlayer)
+      return res
+        .status(404)
+        .json({ message: "강화할 선수를 보유하지 않았습니다." });
+
+    // 강화 대상 보유 여부 확인
+    let meterial = await prisma.myPlayers.findFirst({
+      where: {
+        myPlayer_id: meterial_id,
+        account_id: account.account_id,
+      },
+    });
+    if (!meterial)
+      return res
+        .status(404)
+        .json({ message: "재료 선수를 보유하지 않았습니다." });
 
     // 최대 10강
-    if(targetPlayer.enhanced === 10) return res.status(204).json({ message:"이미 최대 강화단계입니다." });
+    if (targetPlayer.enhanced === 10)
+      return res.status(204).json({ message: "이미 최대 강화단계입니다." });
 
     // 강화 비용
-    const cost = 1000 * Math.pow(2, (targetPlayer.enhanced));
+    const cost = 1000 * Math.pow(2, targetPlayer.enhanced);
 
     // 강화 확률
-    const rate = 100 - 10*targetPlayer.enhanced;
+    const rate = 100 - 10 * targetPlayer.enhanced;
 
     // 강화 성공시
-    // 보유 선수의 enhanced를 1 증가, 보유 재료 선수 delete
+    // 보유 재료 선수 delete, 보유 선수의 enhanced를 1 증가,
 
     // 강화 실패시
-    // 보유 선수의 enhanced 1 감소, 
+    // 확률에 따라
+    // 보유 재료 선수 delete or 보유 재료 선수 보존
+    // 보유 선수의 enhanced 1 감소 or 보존
 
     const enhancedPlayer = await prisma.$transaction(
       async (tx) => {
