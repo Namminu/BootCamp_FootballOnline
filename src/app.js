@@ -25,7 +25,7 @@ app.use("/api", [
 //   PlayerRouter,
    PlayerDrawRouter,
 //   PlayerEnhanceRouter,
-//   RankingRouter,
+   RankingRouter,
 ]);
 
 //dotenv.config();
@@ -38,4 +38,9 @@ app.get("/", (req, res) => {
 
 app.listen(PORT, () => {
   console.log(PORT, "포트로 서버가 열렸어요!");
+
+
+// 서버 시작
+app.listen(PORT, () => {
+  console.log(`${PORT} 포트로 서버가 열렸어요!`);
 });
