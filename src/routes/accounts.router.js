@@ -75,7 +75,7 @@ router.post('/sign-up' , async (req ,res) => {
       }
      
       const salt = 10
-      const crypt_password = await bcrypt.hash(password , 10)
+      const crypt_password = await bcrypt.hash(password , salt)
 
 
     const result = await prisma.accounts.create({
