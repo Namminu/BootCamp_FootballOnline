@@ -5,7 +5,7 @@ const router = express.Router();
 
 // 선수 목록 조회
 router.get('/players', async (req, res, next) => {
-    const players = await prisma.Players.findMany({
+    const players = await prisma.players.findMany({
         select: {
             player_name: true,
         }
@@ -17,7 +17,7 @@ router.get('/players', async (req, res, next) => {
 router.get('/players/:playerId', async (req, res, next) => {
     const { playerId } = req.params;
 
-    const player = await prisma.Players.findMany({
+    const player = await prisma.players.findUnique({
         where: { player_id: +playerId },
         select: {
             player_name: true,
