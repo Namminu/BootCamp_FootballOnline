@@ -1,32 +1,32 @@
-import {PrismaClient} from "@prisma/client" 
+import { prisma } from "../utils/prisma/index.js";
 import  express from "express"
-import jwt from 'jsonwebtoken';
+import authMiddleware from "../middlewares/error-handler.middleware.js"
+
 
 const router = express.Router()
 
-const prisma = new PrismaClient({
-    log: ['query' , 'info' , 'warn' , 'error'],
 
-    errorFormat: 'pretty'
-})
-
-
-// 캐시구매(인증 미들웨어가 필요)
-router.get('/cash/:email' , async(req , res) => {
+// 캐시구매
+router.get('/cash/:email' , authMiddleware, async(req , res) => {
     try{
-      const {account_id} = req.user
-
+      const {account_id} = req.account
       const {email} = req.params
       const result = await prisma.accounts.findUnique({
-        where : {email : email}
+        where : {email : email , account_id : account_id,}
+        
       })
       
       if(!result){
-        return res.status(400).json({message:"해당 아이디[이메일]은 존재하지 않습니다"})
+        return res.status(400).json({message:"해당 이메일과 계정 정보가 일치하지 않습니다"})
       }
-      else if(result){
-        result.money += 1000
-      }
+      
+      result.money += 1000
+
+      await prisma.accounts.update({
+        where: { email: email , account_id : account_id},
+        data: { money : result.money}
+      })
+      
   
       return res.status(201).
       json({message: "충전에 성공했습니다",
