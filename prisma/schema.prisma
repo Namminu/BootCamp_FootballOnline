@@ -14,12 +14,12 @@ datasource db {
 }
 
 model Accounts {
-  account_id    Int     @id @default(autoincrement()) @map("account_id")
-  email         String  @unique @map("email")
-  password      String  @map("password")
-  account_name  String  @unique @map("account_name")
-  money         Int     @map("money")
-  mmr           Int     @map("mmr")
+  account_id   Int    @id @default(autoincrement()) @map("account_id")
+  email        String @unique @map("email")
+  password     String @map("password")
+  account_name String @unique @map("account_name")
+  money        Int    @default(10000) @map("money")
+  mmr          Int    @map("mmr")
 
   myPlayers MyPlayers[]
   squad     Squad?
@@ -28,13 +28,13 @@ model Accounts {
 }
 
 model Players {
-  player_id Int     @id @default(autoincrement()) @map("player_id")
-  player_name       String  @map("player_name")
-  player_speed      Int  @map("player_speed")
-  player_finish     Int  @map("player_finish") 
-  player_power      Int  @map("player_power")  
-  player_defense    Int  @map("player_defense")  
-  player_stamina    Int  @map("player_stamina")
+  player_id      Int    @id @default(autoincrement()) @map("player_id")
+  player_name    String @map("player_name")
+  player_speed   Int    @map("player_speed")
+  player_finish  Int    @map("player_finish")
+  player_power   Int    @map("player_power")
+  player_defense Int    @map("player_defense")
+  player_stamina Int    @map("player_stamina")
 
   myPlayers MyPlayers[]
 
@@ -42,33 +42,32 @@ model Players {
 }
 
 model MyPlayers {
-  myPlayer_id   Int      @id @map("myPlayer_id")
-  account_id    Int      @map("account_id")
-  player_id     Int      @map("player_id")
-  enhanced      Int      @map("enhanced")
+  myPlayer_id Int @id @default(autoincrement()) @map("myPlayer_id")
+  account_id  Int @map("account_id")
+  player_id   Int @map("player_id")
+  enhanced    Int @map("enhanced")
 
-  accounts      Accounts @relation(fields: [account_id], references: [account_id], onDelete: Cascade)
-  players       Players  @relation(fields: [player_id], references: [player_id], onDelete: Cascade)
+  accounts Accounts @relation(fields: [account_id], references: [account_id], onDelete: Cascade)
+  players  Players  @relation(fields: [player_id], references: [player_id], onDelete: Cascade)
 
-  squads1       Squad[]  @relation("SquadPlayer1")
-  squads2       Squad[]  @relation("SquadPlayer2")
-  squads3       Squad[]  @relation("SquadPlayer3")
+  squads1 Squad[] @relation("SquadPlayer1")
+  squads2 Squad[] @relation("SquadPlayer2")
+  squads3 Squad[] @relation("SquadPlayer3")
 
   @@map("MyPlayers")
 }
 
 model Squad {
-  squad_id      Int        @id @default(autoincrement()) @map("squad_id")
-  account_id    Int        @unique @map("account_id")
-  squad_player1 Int        @map("squad_player1")
-  squad_player2 Int        @map("squad_player2")
-  squad_player3 Int        @map("squad_player3")
+  squad_id      Int @id @default(autoincrement()) @map("squad_id")
+  account_id    Int @unique @map("account_id")
+  squad_player1 Int @map("squad_player1")
+  squad_player2 Int @map("squad_player2")
+  squad_player3 Int @map("squad_player3")
 
-  accounts      Accounts   @relation(fields: [account_id], references: [account_id], onDelete: Cascade)
-  players1      MyPlayers  @relation("SquadPlayer1", fields: [squad_player1], references: [myPlayer_id], onDelete: Cascade)
-  players2      MyPlayers  @relation("SquadPlayer2", fields: [squad_player2], references: [myPlayer_id], onDelete: Cascade)
-  players3      MyPlayers  @relation("SquadPlayer3", fields: [squad_player3], references: [myPlayer_id], onDelete: Cascade)
+  accounts Accounts  @relation(fields: [account_id], references: [account_id], onDelete: Cascade)
+  players1 MyPlayers @relation("SquadPlayer1", fields: [squad_player1], references: [myPlayer_id], onDelete: Cascade)
+  players2 MyPlayers @relation("SquadPlayer2", fields: [squad_player2], references: [myPlayer_id], onDelete: Cascade)
+  players3 MyPlayers @relation("SquadPlayer3", fields: [squad_player3], references: [myPlayer_id], onDelete: Cascade)
 
   @@map("Squad")
 }
-
