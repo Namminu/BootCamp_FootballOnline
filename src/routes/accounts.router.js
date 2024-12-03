@@ -2,6 +2,7 @@ import express from "express"
 import {PrismaClient} from "@prisma/client"
 import Joi from "joi"
 import bcrypt from "bcrypt"
+import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient({
     log: ['query' , 'info' , 'warn' , 'error'],
@@ -72,9 +73,9 @@ router.post('/sign-up' , async (req ,res) => {
       if (accountname_exists) {
         return res.status(400).json({ message: "해당 닉네임은 누군가 사용 중입니다." });
       }
-      
-    const salt = 10
-    const crypt_password = await bcrypt.hash(password,salt)
+     
+      const salt = 10
+      const crypt_password = await bcrypt.hash(password , 10)
 
 
     const result = await prisma.accounts.create({
@@ -99,8 +100,6 @@ router.post('/sign-up' , async (req ,res) => {
 
 
 // 로그인
-import jwt from 'jsonwebtoken';
-
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -113,21 +112,30 @@ router.post('/login', async (req, res) => {
     }
 
     
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const password_vaild = await bcrypt.compare(password , user.password)
 
-    if (!isPasswordValid) {
-      return res.status(400).json({ message: '비밀번호가 올바르지 않습니다.' });
+    if(!password_vaild){
+        return res.status(400).json({message: "비밀번호가 틀렸습니다"})
     }
 
     
     const token = jwt.sign(
       {
-        userId: user.userId,
+        account_id: user.account_id,
         email: user.email,
       },
       'SecretKey', 
       { expiresIn: '1h' } 
     );
+
+    res.cookie('authorization',`Bearer ${token}`,{
+      secure: true,
+      httpOnly: true,
+      sameSite: "strict",
+      maxAge: 3600000
+    })
+
+ 
 
     return res.status(200).json({
       message: '로그인 성공!',
@@ -138,4 +146,8 @@ router.post('/login', async (req, res) => {
     return res.status(500).json({ message: '로그인 에러가 발생했습니다' });
   }
 });
+
+
+
+
   
