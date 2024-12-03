@@ -58,7 +58,7 @@ router.post('/sign-up' , async (req ,res) => {
         return res.status(400).json({ message: "해당 이메일은 누군가 사용 중입니다." });
       }
       
-      const password_exists = await prisma.accounts.findMany({
+      const password_exists = await prisma.accounts.findFirst({
         where: { password },
       });
       
