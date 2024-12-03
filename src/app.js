@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 // import GameRouter from "./routes/game.router.js";
 // import PlayerRouter from "./routes/player.router.js";
 import PlayerDrawRouter from "./routes/player.draw.router.js";
-// import PlayerEnhanceRouter from "./routes/player.enhance.router.js";
+import PlayerEnhanceRouter from "./routes/player.enhance.router.js";
 import RankingRouter from "./routes/ranking.router.js";
 //import dotenv from "dotenv";
 //import errorHandlingMiddleware from "./middlewares/error-handling.middleware.js";
@@ -24,7 +24,7 @@ app.use("/api", [
 //   GameRouter,
 //   PlayerRouter,
    PlayerDrawRouter,
-//   PlayerEnhanceRouter,
+   PlayerEnhanceRouter,
    RankingRouter,
 ]);
 
