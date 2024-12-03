@@ -1,38 +1,31 @@
 import express from "express"
-import {PrismaClient} from "@prisma/client"
+import { prisma } from "../utils/prisma/index.js";
 import Joi from "joi"
 import bcrypt from "bcrypt"
+import jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient({
-    log: ['query' , 'info' , 'warn' , 'error'],
-
-    errorFormat: 'pretty'
-})
 
 const router = express.Router()
 
 
-const schema = Joi.object({
-    email: Joi.string()
-        .email
-        .required(),
+const schema = Joi.object({ 
+    email: Joi.string() // 문자열
+        .email // 이메일 형식
+        .required(), // 반드시 존재해야함
 
     password: Joi.string()
-        .alphanum()
-        .min(6)
-        .required(),
+        .alphanum() // 영어와 숫자만 사용할것
+        .min(6) // 최소6글자 
+        .required(), // 반드시 존재해야함
 
     account_name: Joi.string()
-        .alphanum()
-        .min(6)
-        .required()
+        .alphanum() // 영어와 숫자만 사용할것
+        .min(6) // 최소6글자
+        .required() // 반드시 존재해야함
 })
 
 
 
-
-// 회원가입 (기본키 , 아이디[이메일]{필수} , 아이디 , 비번 ,닉네임 중복 x
-// 비밀번호{필수} , 닉네임{필수} , 보유재화{필수} , mmr?) , 아이디 비번은 영어 숫자만
 
 
 // 회원가입
@@ -57,7 +50,7 @@ router.post('/sign-up' , async (req ,res) => {
         return res.status(400).json({ message: "해당 이메일은 누군가 사용 중입니다." });
       }
       
-      const password_exists = await prisma.accounts.findMany({
+      const password_exists = await prisma.accounts.findFirst({
         where: { password },
       });
       
@@ -72,9 +65,10 @@ router.post('/sign-up' , async (req ,res) => {
       if (accountname_exists) {
         return res.status(400).json({ message: "해당 닉네임은 누군가 사용 중입니다." });
       }
-      
-    const salt = 10
-    const crypt_password = await bcrypt.hash(password,salt)
+     
+      // bcrypt 를 이용해서 password 암호화
+      const salt = 10
+      const crypt_password = await bcrypt.hash(password , salt)
 
 
     const result = await prisma.accounts.create({
@@ -99,8 +93,6 @@ router.post('/sign-up' , async (req ,res) => {
 
 
 // 로그인
-import jwt from 'jsonwebtoken';
-
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -113,21 +105,30 @@ router.post('/login', async (req, res) => {
     }
 
     
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const password_vaild = await bcrypt.compare(password , user.password)
 
-    if (!isPasswordValid) {
-      return res.status(400).json({ message: '비밀번호가 올바르지 않습니다.' });
+    if(!password_vaild){
+        return res.status(400).json({message: "비밀번호가 틀렸습니다"})
     }
 
-    
+    // JWT 토큰 생성 
     const token = jwt.sign(
       {
-        userId: user.userId,
+        account_id: user.account_id,
         email: user.email,
       },
-      'SecretKey', 
-      { expiresIn: '1h' } 
+      'SecretKey', // 암호화 서명
+      { expiresIn: '1h' }  // 만료시간 1시간
     );
+
+    // 사용자에게 JWT 토큰이 들어간 쿠키를 보냄
+    res.cookie('authorization',`Bearer ${token}`,{
+      httpOnly: true, // 자바스크립트로 쿠키 수정불가
+      sameSite: "strict", // 동일한 사이트만 가능
+      maxAge: 3600000 // 만료시간 1시간
+    })
+
+ 
 
     return res.status(200).json({
       message: '로그인 성공!',
@@ -138,4 +139,8 @@ router.post('/login', async (req, res) => {
     return res.status(500).json({ message: '로그인 에러가 발생했습니다' });
   }
 });
+
+
+
+
   
