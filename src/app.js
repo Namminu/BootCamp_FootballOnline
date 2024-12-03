@@ -10,6 +10,7 @@ import PlayerDrawRouter from "./routes/player.draw.router.js";
 import RankingRouter from "./routes/ranking.router.js";
 //import dotenv from "dotenv";
 //import errorHandlingMiddleware from "./middlewares/error-handling.middleware.js";
+import PlayerRouter from "./routes/player.router.js";
 
 const app = express();
 const PORT = 3018;
@@ -26,6 +27,7 @@ app.use("/api", [
    PlayerDrawRouter,
 //   PlayerEnhanceRouter,
    RankingRouter,
+   PlayerRouter,
 ]);
 
 //dotenv.config();
