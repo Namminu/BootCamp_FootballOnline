@@ -17,9 +17,18 @@
     "prisma": "^6.0.0"
   },
   "devDependencies": {
+<<<<<<< Updated upstream
     "nodemon": "^3.1.7"
   },
   "scripts": {
 	"dev": "nodemon src/app.js"
 }
+=======
+    "nodemon": "^3.1.7",
+    "prettier": "^3.4.1"
+  },
+  "scripts": {
+    "dev": "nodemon src/app.js"
+  }
+>>>>>>> Stashed changes
 }

@@ -1,5 +1,6 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
+<<<<<<< Updated upstream
 import Joi from "joi";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -22,6 +23,20 @@ const schema = Joi.object({
     .required(), // 반드시 존재해야함
 });
 
+=======
+import jwt from "jsonwebtoken";
+import Joi from "joi";
+import bcrypt from "bcrypt";
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const router = express.Router();
+
+// 회원가입 (기본키 , 아이디[이메일]{필수} , 아이디 , 비번 ,닉네임 중복 x
+// 비밀번호{필수} , 닉네임{필수} , 보유재화{필수} , mmr?) , 아이디 비번은 영어 숫자만
+
+>>>>>>> Stashed changes
 // 회원가입
 router.post("/sign-up", async (req, res) => {
   try {
@@ -29,6 +44,7 @@ router.post("/sign-up", async (req, res) => {
     const money = 10000;
     const mmr = 1000;
 
+<<<<<<< Updated upstream
     // 요청 바디 유효성 검사
     const { error } = schema.validate({ email, password, account_name });
 
@@ -41,6 +57,16 @@ router.post("/sign-up", async (req, res) => {
     }
 
     // 이메일 중복 확인
+=======
+    const { error } = schema.validate({ email, password, account_name });
+
+    if (error) {
+      return res.status(400).json({
+        message: "아이디,비밀번호,닉네임이 규칙에 맞게 작성되지 않았습니다",
+      });
+    }
+
+>>>>>>> Stashed changes
     const email_exists = await prisma.accounts.findUnique({
       where: { email },
     });
@@ -48,8 +74,36 @@ router.post("/sign-up", async (req, res) => {
     if (email_exists) {
       return res
         .status(400)
+<<<<<<< Updated upstream
         .json({ message: "해당 이메일은 이미 사용 중입니다." });
     }
+=======
+        .json({ message: "해당 이메일은 누군가 사용 중입니다." });
+    }
+
+    const password_exists = await prisma.accounts.findMany({
+      where: { password },
+    });
+
+    if (password_exists.length > 0) {
+      return res
+        .status(400)
+        .json({ message: "해당 비밀번호는 누군가 사용 중입니다." });
+    }
+
+    const accountname_exists = await prisma.accounts.findUnique({
+      where: { account_name },
+    });
+
+    if (accountname_exists) {
+      return res
+        .status(400)
+        .json({ message: "해당 닉네임은 누군가 사용 중입니다." });
+    }
+
+    const salt = 10;
+    const crypt_password = await bcrypt.hash(password, salt);
+>>>>>>> Stashed changes
 
     // 계정명 중복 확인
     const accountname_exists = await prisma.accounts.findUnique({
@@ -82,14 +136,22 @@ router.post("/sign-up", async (req, res) => {
       data: result,
     });
   } catch (error) {
+<<<<<<< Updated upstream
     console.error(error); // 서버 로그로 에러 출력
     return res
       .status(500)
       .json({ message: "회원가입 중 오류가 발생했습니다." });
+=======
+    return res.status(500).json({ message: "회원가입 에러가 발생했습니다" });
+>>>>>>> Stashed changes
   }
 });
 
 // 로그인
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -100,6 +162,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "존재하지 않는 이메일입니다." });
     }
 
+<<<<<<< Updated upstream
     const password_vaild = await bcrypt.compare(password, user.password);
 
     if (!password_vaild) {
@@ -107,13 +170,26 @@ router.post("/login", async (req, res) => {
     }
 
     // JWT 토큰 생성
+=======
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: "비밀번호가 올바르지 않습니다." });
+    }
+
+>>>>>>> Stashed changes
     const token = jwt.sign(
       {
         account_id: user.account_id,
         email: user.email,
       },
+<<<<<<< Updated upstream
       "SecretKey", // 암호화 서명
       { expiresIn: "1h" } // 만료시간 1시간
+=======
+      process.env.JWT_KEY,
+      { expiresIn: "1h" }
+>>>>>>> Stashed changes
     );
 
     // 사용자에게 JWT 토큰이 들어간 쿠키를 보냄
