@@ -1,5 +1,4 @@
-
-import prisma from './prisma'; // prisma를 import 해야 합니다.
+import { prisma } from "../utils/prisma/index.js";
 
 export async function calculateSquadAverageStats(accountId) {
   // 1. 해당 계정이 속한 스쿼드 찾기

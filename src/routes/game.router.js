@@ -7,7 +7,8 @@ const router = express.Router();
 // 게임 로비 기능: 인증된 사용자만 접근 가능
 router.get("/lobby", authMiddleware, async (req, res, next) => {
   try {
-    const { account_id: currentAccountId } = req.account; // 인증된 계정의 ID
+    // 인증된 계정의 ID (authMiddleware에서 설정된 req.account)
+    const { account_id: currentAccountId } = req.account; 
 
     // 1. 스쿼드를 가지고 있는 계정만 조회 (스쿼드가 있는 유저만 랭킹에 포함)
     const rankings = await prisma.accounts.findMany({
@@ -47,7 +48,7 @@ router.get("/lobby", authMiddleware, async (req, res, next) => {
         (account) => account.account_id === currentAccountId
       ) + 1;
 
-    // 5. 매칭 가능한 계정 찾기 (자기 자신을 제외한 랭킹 +-2 범위)
+    // 5. 매칭 가능한 계정 찾기 (자기 자신을 제외한 랭킹 ±2 범위)
     const matchedAccounts = rankedAccounts.filter((account) => {
       const rankDifference = Math.abs(account.rank - currentRank);
 
