@@ -47,8 +47,8 @@ router.patch("/players/enhance", authMiddleware, async (req, res, next) => {
     if(targetPlayer.enhanced===10)
       return res.status(400).json({ message: "이미 최대 강화 단계입니다."});
 
-    // 강화할 선수와 재료 선수 강화 단계 동일한지 확인
-    if(!(targetPlayer.enhanced===meterial.enhanced))
+    // 강화할 선수와 재료 선수가 동일한 선수, 강화 단계인지 확인
+    if(targetPlayer.enhanced!==meterial.enhanced||(targetPlayer.player_id!==meterial.player_id))
       return res
         .status(400)
         .json({ message: "동일한 강화 단계 선수만 재료로 사용 가능합니다." });
