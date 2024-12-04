@@ -26,8 +26,6 @@ const schema = Joi.object({
 
 
 
-
-
 // 회원가입
 router.post('/sign-up' , async (req ,res) => {
     try{
@@ -107,11 +105,11 @@ router.post('/login', async (req, res) => {
     // JWT 토큰 생성 
     const token = jwt.sign(
       {
-        account_id: user.account_id,
+        account_id: user.account_id, // 토큰 데이터
         email: user.email,
       },
-      process.env.JWT_KEY, // env 파일
-      { expiresIn: '1h' }  // 만료시간 1시간
+      process.env.JWT_KEY, // 토큰 서명 키
+      { expiresIn: '1h' }  // 토큰 설정
     );
 
     
