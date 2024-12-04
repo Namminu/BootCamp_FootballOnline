@@ -7,7 +7,7 @@ export default async function (req, res, next) {
         if(!authorization)
             throw new Error('토큰이 존재하지 않습니다.');
         const token = req.headers.authorization.split(' ')[1];
-        //const token = req.body.token.split(' ')[1];
+        
         const decodedToken = jwt.verify(token, process.env.JWT_KEY);
         const account_id = decodedToken.account_id;
 
