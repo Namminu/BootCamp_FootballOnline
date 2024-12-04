@@ -32,7 +32,7 @@ app.use("/api", [
    RankingRouter,
    PlayerRouter,
 ]);
-app.use(errorHandlerMiddleware());
+app.use(errorHandlerMiddleware);
 
 // 서버 시작
 app.listen(PORT, () => {
