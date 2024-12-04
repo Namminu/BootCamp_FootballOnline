@@ -12,17 +12,18 @@ router.post("/players/draw", authMiddleware, async (req, res, next) => {
     const cost = 1000;
 
     //캐시 보유 1000원 이상인지 검사
-    if (account.cash < cost) {
+    if (account.money < cost) {
       return res.status(400).json({ Message: "보유 캐쉬가 부족합니다." });
     }
 
     // 선수 뽑기 로직
     let existingPlayer;
+    const players = await prisma.players.findMany({});
+    let randomPlayer;
     do {
       // 선수 테이블에서 랜덤 선수 가져오기
-      const players = await prisma.players.findMany({});
       const randomNum = Math.floor(Math.random() * players.length);
-      const randomPlayer = players[randomNum];
+      randomPlayer = players[randomNum];
       
       if (!randomPlayer) {
         return res.status(404).json({ Message: "존재하지 않는 선수입니다." });
@@ -63,9 +64,9 @@ router.post("/players/draw", authMiddleware, async (req, res, next) => {
         isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
       }
     );
-    if(!newPlayer) res.status(500).json({ message: "선수 뽑기 오류"});
+    if(!newPlayer) return res.status(500).json({ message: "선수 뽑기 오류"});
 
-    return res.status(200).json({ newPlayer, message: `남은 잔액 : ${account.money}` });
+    return res.status(200).json({ newPlayer, message: `남은 잔액 : ${account.money-cost}` });
   } catch (err) {
     next(err);
   }
