@@ -1,10 +1,11 @@
 import express from 'express';
 import { prisma } from '../../utils/prisma/index.js'
+import authMiddleware from "../middlewares/auth.middleware.js"
 
 const router = express.Router();
 
 // 스쿼드 조회 API
-router.get('/squad/:targetId', middleware, async (req, res, next) => {
+router.get('/squad/:targetId', authMiddleware, async (req, res, next) => {
     try {
         // JWT 를 통해 받은 로그인 한 계정의 ID값
         const myAccountId = req.account.accountId;

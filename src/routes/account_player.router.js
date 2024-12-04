@@ -1,13 +1,15 @@
 import express from 'express';
 import { prisma } from '../../utils/prisma/index.js'
+import authMiddleware from "../middlewares/auth.middleware.js"
 
 const router = express.Router();
 
 // 보유 선수 조회 API
-router.get('/myPlayers/:accountId', middleware, async (req, res, next) => {
+router.get('/players/getPlayer', authMiddleware, async (req, res, next) => {
     try {
-        const accountId = +req.params.accountId;
-        // MyPlayuers 테이블과 Players 테이블 Join 데이터 할당
+        const accountId = +req.account.accountId;
+        if (!accountId) res.status(404).json({ message: "해당 계정이 존재하지 않습니다." });
+        // MyPlayers 테이블과 Players 테이블 Join 데이터 할당
         const players = await prisma.myPlayers.findMany({
             where: { account_id: accountId },
             include: {
