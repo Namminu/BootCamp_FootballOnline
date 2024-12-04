@@ -1,6 +1,6 @@
 import { prisma } from "../utils/prisma/index.js";
 import  express from "express"
-import authMiddleware from "../middlewares/error-handler.middleware.js"
+import authMiddleware from "../middlewares/auth.middleware.js" 
 
 
 const router = express.Router()
