@@ -11,6 +11,7 @@ import RankingRouter from "./routes/ranking.router.js";
 import dotenv from "dotenv";
 //import errorHandlingMiddleware from "./middlewares/error-handling.middleware.js";
 import PlayerRouter from "./routes/player.router.js";
+import errorHandlerMiddleware from "./middlewares/error-handler.middleware.js";
 
 const app = express();
 const PORT = 3018;
@@ -31,6 +32,7 @@ app.use("/api", [
    RankingRouter,
    PlayerRouter,
 ]);
+app.use(errorHandlerMiddleware());
 
 // 서버 시작
 app.listen(PORT, () => {
