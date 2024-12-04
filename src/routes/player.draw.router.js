@@ -13,11 +13,9 @@ router.post("/players/draw", authMiddleware, async (req, res, next) => {
     const cost = 1000;
 
     //캐시 보유 1000원 이상인지 검사
-    if (account.cash < cost) {
+    if (account.money < cost) {
       return res.status(400).json({ Message: "보유 캐쉬가 부족합니다." });
     }
-
-    console.log('teststts');
 
     // 선수 뽑기 로직
     let existingPlayer;
