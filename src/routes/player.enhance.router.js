@@ -42,19 +42,34 @@ router.post("/players/draw", authMiddleware, async (req, res, next) => {
     // 강화 비용
     const cost = 1000 * Math.pow(2, targetPlayer.enhanced);
 
-    // 강화 확률
-    const rate = 100 - 10 * targetPlayer.enhanced;
-
+    // 강화 확률 100, 90, 80, ...
+    const enhanceRate = 100 - 10 * targetPlayer.enhanced;
+    const randomNum = Math.random()*100;
+    if(randomNum<enhanceRate){
     // 강화 성공시
     // 보유 재료 선수 delete, 보유 선수의 enhanced를 1 증가,
+    }
 
     // 강화 실패시
     // 확률에 따라
     // 보유 재료 선수 delete or 보유 재료 선수 보존
-    // 보유 선수의 enhanced 1 감소 or 보존
 
     const enhancedPlayer = await prisma.$transaction(
       async (tx) => {
+        if(randomNum<enhanceRate){
+          await prisma.myPlayers.update({
+            where: {
+              enhanced: targetPlayer.enhanced+1,
+            }
+          })
+        }
+        // 재료 delete
+        await prisma.myPlayers.delete({
+          where: {
+            myPlayer_id: meterial_id,
+          }
+        })
+
         return enhancedPlayer;
       },
       {

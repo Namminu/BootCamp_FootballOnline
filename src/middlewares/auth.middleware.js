@@ -3,19 +3,16 @@ import { prisma } from '../utils/prisma/index.js';
 
 export default async function (req, res, next) {
     try {
-        const { authorization } = req.headers;
-        if (!authorization)
-            throw new Error('요청한 사용자의 토큰이 존재하지 않습니다.');
-
-        const [tokenType, token] = authorization.split(' ');
-        if (tokenType !== 'Bearer')
-            throw new Error(`토큰 타입이 ${tokenType} 형식이옵니다. 아닙니다.`);
-
+        const authorization = req.headers.authorization;
+        if(!authorization)
+            throw new Error('토큰이 존재하지 않습니다.');
+        const token = req.headers.authorization.split(' ')[1];
+        //const token = req.body.token.split(' ')[1];
         const decodedToken = jwt.verify(token, process.env.JWT_KEY);
-        const accountId = decodedToken.accountId;
+        const account_id = decodedToken.account_id;
 
         const account = await prisma.accounts.findFirst({
-            where: { account_id: accountId },
+            where: { account_id: account_id },
         });
         if (!account) {
             res.clearCookie('authorization');

@@ -1,6 +1,6 @@
 import { prisma } from "../utils/prisma/index.js";
 import  express from "express"
-import authMiddleware from "../middlewares/error-handler.middleware.js"
+import authMiddleware from "../middlewares/auth.middleware.js" 
 
 
 const router = express.Router()
@@ -39,3 +39,5 @@ router.get('/cash/:email' , authMiddleware, async(req , res) => {
       return res.status(500).json({message : "캐시구메 에러가 발생했습니다"})
     }
   })
+
+export default router;

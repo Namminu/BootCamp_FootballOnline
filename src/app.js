@@ -5,12 +5,15 @@ import AccountsRouter from "./routes/accounts.router.js";
 // import AccountSquadRouter from "./routes/account.squad.router.js";
 import GameRouter from "./routes/game.router.js";
 // import PlayerRouter from "./routes/player.router.js";
+//import AccountsRouter from "./routes/accounts.router.js";
+// import AccountPlayerRouter from "./routes/account.player.router.js";
+// import AccountSquadRouter from "./routes/account.squad.router.js";
+// import GameRouter from "./routes/game.router.js";
+import PlayerRouter from "./routes/player.router.js";
 import PlayerDrawRouter from "./routes/player.draw.router.js";
 import PlayerEnhanceRouter from "./routes/player.enhance.router.js";
 import RankingRouter from "./routes/ranking.router.js";
 import dotenv from "dotenv";
-//import errorHandlingMiddleware from "./middlewares/error-handling.middleware.js";
-import PlayerRouter from "./routes/player.router.js";
 import errorHandlerMiddleware from "./middlewares/error-handler.middleware.js";
 
 const app = express();
@@ -26,10 +29,11 @@ app.use("/api", [
 //   AccountSquadRouter,
   GameRouter,
 //   PlayerRouter,
+//   GameRouter,
+   PlayerRouter,
    PlayerDrawRouter,
    PlayerEnhanceRouter,
    RankingRouter,
-   PlayerRouter,
 ]);
 app.use(errorHandlerMiddleware);
 
