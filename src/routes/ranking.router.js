@@ -9,8 +9,9 @@ router.get("/ranking", async (req, res, next) => {
     // 1. 스쿼드를 가지고 있는 계정만 조회
     const rankings = await prisma.accounts.findMany({
       where: {
-        squad: { // squad가 존재하는 계정만 조회
-          some: {},
+        squad: {
+          // squad 관계 필드가 존재하는지 체크
+          isNot: null
         },
       },
       select: {

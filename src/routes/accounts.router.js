@@ -25,9 +25,6 @@ const schema = Joi.object({
 })
 
 
-
-
-
 // 회원가입
 router.post('/sign-up' , async (req ,res) => {
     try{

@@ -9,7 +9,6 @@ import PlayerDrawRouter from "./routes/player.draw.router.js";
 import PlayerEnhanceRouter from "./routes/player.enhance.router.js";
 import RankingRouter from "./routes/ranking.router.js";
 import dotenv from "dotenv";
-//import errorHandlingMiddleware from "./middlewares/error-handling.middleware.js";
 import PlayerRouter from "./routes/player.router.js";
 import errorHandlerMiddleware from "./middlewares/error-handler.middleware.js";
 
@@ -20,7 +19,6 @@ dotenv.config();
 
 app.use(express.json());
 app.use(cookieParser());
-//app.use(errorHandlingMiddleware);
 app.use("/api", [
 //   AccountsRouter,
 //   AccountPlayerRouter,
@@ -32,9 +30,10 @@ app.use("/api", [
    RankingRouter,
    PlayerRouter,
 ]);
-app.use(errorHandlerMiddleware());
+app.use(errorHandlerMiddleware);
 
 // 서버 시작
 app.listen(PORT, () => {
   console.log(`${PORT} 포트로 서버가 열렸어요!`);
 });
+

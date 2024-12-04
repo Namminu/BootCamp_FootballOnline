@@ -30,9 +30,9 @@ router.get("/lobby", authMiddleware, async (req, res, next) => {
           lte: accountMMR + 2, // accountMMR + 2
         },
         squad: {
-          // 스쿼드를 가진 계정만 조회
-          some: {},
-        },
+            // squad 관계 필드가 존재하는지 체크
+            isNot: null
+          },
       },
       select: {
         account_id: true,
