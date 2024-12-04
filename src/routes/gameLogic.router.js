@@ -5,6 +5,7 @@ export async function calculateSquadAverageStats(accountId) {
   const account = await prisma.accounts.findUnique({
     where: { account_id: accountId },
     select: {
+      account_name: true, // 계정의 이름 추가
       squad: true, // 계정의 스쿼드
     },
   });
@@ -63,10 +64,15 @@ export async function calculateSquadAverageStats(accountId) {
   const squadAverage =
     playerAverages.reduce((sum, avg) => sum + avg, 0) / playerAverages.length;
 
-  return squadAverage;
+  return { squadAverage, accountName: account.account_name };
 }
 
-export function playGame(currentTeamAverageStat, opponentTeamAverageStat) {
+export function playGame(
+  currentTeamAverageStat,
+  opponentTeamAverageStat,
+  currentTeamName,
+  opponentTeamName
+) {
   const goals = []; // 각 팀의 골 기록을 담을 배열
   const maxMinutes = 15; // 게임 시간 15분
   let currentTeamScore = 0;
@@ -84,13 +90,13 @@ export function playGame(currentTeamAverageStat, opponentTeamAverageStat) {
 
     // 현재 팀의 골 확률을 능력치 기반으로 비교
     if (currentTeamChance < currentTeamAverage) {
-      goals.push({ team: "현재 팀", minute: minute }); // 골이 들어간 분과 팀
+      goals.push(`${currentTeamName} 팀이 ${minute}분에 골을 넣었습니다.`);
       currentTeamScore++; // 현재 팀 골 수 증가
     }
 
     // 상대 팀의 골 확률을 능력치 기반으로 비교
     if (opponentTeamChance < opponentTeamAverage) {
-      goals.push({ team: "상대 팀", minute: minute });
+      goals.push(`${opponentTeamName} 팀이 ${minute}분에 골을 넣었습니다.`);
       opponentTeamScore++; // 상대 팀 골 수 증가
     }
   }
