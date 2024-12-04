@@ -46,14 +46,7 @@ router.post('/sign-up' , async (req ,res) => {
         return res.status(400).json({ message: "해당 이메일은 누군가 사용 중입니다." });
       }
       
-      const password_exists = await prisma.accounts.findFirst({
-        where: { password },
-      });
-      
-      if (password_exists.length > 0) {
-        return res.status(400).json({ message: "해당 비밀번호는 누군가 사용 중입니다." });
-      }
-      
+   
       const accountname_exists = await prisma.accounts.findUnique({
         where: { account_name },
       });
@@ -110,21 +103,15 @@ router.post('/login', async (req, res) => {
     // JWT 토큰 생성 
     const token = jwt.sign(
       {
-        account_id: user.account_id,
+        account_id: user.account_id, // 토큰 데이터
         email: user.email,
       },
-      'SecretKey', // 암호화 서명
-      { expiresIn: '1h' }  // 만료시간 1시간
+      process.env.JWT_KEY, // 토큰 서명 키
+      { expiresIn: '1h' }  // 토큰 설정
     );
 
-    // 사용자에게 JWT 토큰이 들어간 쿠키를 보냄
-    res.cookie('authorization',`Bearer ${token}`,{
-      httpOnly: true, // 자바스크립트로 쿠키 수정불가
-      sameSite: "strict", // 동일한 사이트만 가능
-      maxAge: 3600000 // 만료시간 1시간
-    })
+    
 
- 
 
     return res.status(200).json({
       message: '로그인 성공!',
