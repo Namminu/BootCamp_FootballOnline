@@ -10,7 +10,7 @@ const router = express.Router()
 
 const schema = Joi.object({ 
     email: Joi.string() // 문자열
-        .email // 이메일 형식
+        .email() // 이메일 형식
         .required(), // 반드시 존재해야함
 
     password: Joi.string()
@@ -23,10 +23,6 @@ const schema = Joi.object({
         .min(6) // 최소6글자
         .required() // 반드시 존재해야함
 })
-
-
-
-
 
 // 회원가입
 router.post('/sign-up' , async (req ,res) => {
@@ -140,7 +136,4 @@ router.post('/login', async (req, res) => {
   }
 });
 
-
-
-
-  
+export default router;
