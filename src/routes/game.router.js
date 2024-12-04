@@ -7,59 +7,66 @@ const router = express.Router();
 // 게임 로비 기능: 인증된 사용자만 접근 가능
 router.get("/lobby", authMiddleware, async (req, res, next) => {
   try {
-    const currentAccount = req.account; // 인증된 계정
-    const accountId = currentAccount.account_id; // 인증된 계정의 accountId
-    const accountMMR = currentAccount.mmr; // 인증된 계정의 MMR
+    const currentAccountId = req.account.account_id; // 인증된 계정의 ID
 
-    // 1. 인증된 계정이 스쿼드를 가지고 있는지 확인
-    const accountSquad = await prisma.squad.findUnique({
-      where: { account_id: accountId },
-    });
-
-    if (!accountSquad) {
-      return res.status(400).json({
-        message: "Squad를 짜야 게임을 할 수 있습니다.",
-      });
-    }
-
-    // 2. 인증된 계정의 MMR을 기준으로 +-2 범위 내의 계정들 조회 (스쿼드를 가진 계정만)
+    // 1. 스쿼드를 가지고 있는 계정만 조회 (스쿼드가 있는 유저만 랭킹에 포함)
     const rankings = await prisma.accounts.findMany({
       where: {
-        mmr: {
-          gte: accountMMR - 2, // accountMMR - 2
-          lte: accountMMR + 2, // accountMMR + 2
-        },
         squad: {
-            // squad 관계 필드가 존재하는지 체크
-            isNot: null
-          },
+          isNot: null, // 스쿼드가 있는 계정만 조회
+        },
       },
       select: {
         account_id: true,
-        account_name: true, // 계정 닉네임
-        mmr: true, // MMR
+        account_name: true,
+        mmr: true,
       },
       orderBy: {
         mmr: "desc", // MMR 내림차순 정렬
       },
     });
 
+    // 2. 데이터가 없으면 "등록된 유저가 없다"는 메시지 반환
     if (rankings.length === 0) {
       return res
         .status(200)
-        .json({ message: "해당 범위 내의 계정이 없습니다." });
+        .json({ message: "현재 게임을 시작할 수 있는 유저가 없습니다." });
     }
 
-    // 3. 필터링된 계정들에게 랭킹 순서를 매깁니다.
+    // 3. 각 계정에 랭킹 순서를 부여합니다.
     const rankedAccounts = rankings.map((account, index) => ({
       rank: index + 1, // 1부터 시작하는 랭킹
       account_name: account.account_name,
       mmr: account.mmr,
     }));
 
+    // 4. 매칭 가능한 계정 찾기 (랭킹 +-2 범위)
+    const matchedAccounts = [];
+    const currentRank =
+      rankings.findIndex((account) => account.account_id === currentAccountId) +
+      1; // 현재 인증된 계정의 랭킹 (클라이언트에서 전달받은 rank)
+
+    // 랭킹 +-2 범위 내의 계정을 필터링
+    for (let i = 0; i < rankedAccounts.length; i++) {
+      const account = rankedAccounts[i];
+
+      // 현재 계정과 비교하여 +-2 랭킹 차이 내의 유저만 추가
+      if (Math.abs(account.rank - currentRank) <= 2) {
+        matchedAccounts.push(account);
+      }
+    }
+
+    // 5. 매칭된 계정들이 없으면 알림
+    if (matchedAccounts.length === 0) {
+      return res.status(200).json({
+        message: "현재 랭킹 차이가 너무 커서 매칭할 수 있는 유저가 없습니다.",
+      });
+    }
+
+    // 6. 매칭 가능한 유저들을 반환
     return res.status(200).json({
-      message: "게임 로비 참여 가능 계정들",
-      data: rankedAccounts,
+      message: "매칭 가능한 계정들",
+      data: matchedAccounts,
     });
   } catch (error) {
     next(error); // 에러 핸들러로 에러 전달
@@ -132,7 +139,6 @@ function calculateMMRChange(rankingDiff, teamGoals, opponentGoals) {
 }
 
 // 게임 라우트: 상대 유저와 경기 시작
-// 게임 라우트: 상대 계정과 경기 시작
 router.post("/start-game/:accountId", authMiddleware, async (req, res) => {
   const { accountId } = req.params; // 상대 계정의 accountId
 
@@ -150,7 +156,7 @@ router.post("/start-game/:accountId", authMiddleware, async (req, res) => {
       });
     }
 
-    // 2. 상대 계정이 스쿼드를 가지고 있는지 확인
+    // 2. 상대 계정이 존재하는지 확인
     const opponentAccount = await prisma.accounts.findUnique({
       where: { account_id: parseInt(accountId) },
     });
@@ -159,19 +165,33 @@ router.post("/start-game/:accountId", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "상대 계정을 찾을 수 없습니다." });
     }
 
-    const opponentAccountSquad = await prisma.squad.findUnique({
-      where: { account_id: opponentAccount.account_id },
+    // 3. 로비에서 랭킹 정보를 가져옵니다.
+    const rankings = await prisma.accounts.findMany({
+      where: {
+        squad: {
+          isNot: null, // 스쿼드가 있는 계정만 조회
+        },
+      },
+      select: {
+        account_id: true,
+        account_name: true,
+        mmr: true,
+      },
+      orderBy: {
+        mmr: "desc", // MMR 내림차순 정렬
+      },
     });
 
-    if (!opponentAccountSquad) {
-      return res.status(400).json({
-        message: "상대 계정은 Squad가 없어서 게임을 진행할 수 없습니다.",
-      });
-    }
+    // 4. 현재 계정의 랭킹을 찾아서 차이 계산
+    const currentAccountRanking =
+      rankings.findIndex((account) => account.account_id === currentAccountId) +
+      1; // 1부터 시작하는 랭킹
+    const opponentAccountRanking =
+      rankings.findIndex(
+        (account) => account.account_id === parseInt(accountId)
+      ) + 1; // 1부터 시작하는 랭킹
 
-    // 3. 랭킹 차이 계산
-    const currentAccountRanking = currentAccountSquad.account_id;
-    const opponentAccountRanking = opponentAccountSquad.account_id;
+    // 5. 랭킹 차이 계산
     const rankingDiff = Math.abs(
       currentAccountRanking - opponentAccountRanking
     );
@@ -184,31 +204,31 @@ router.post("/start-game/:accountId", authMiddleware, async (req, res) => {
       });
     }
 
-    // 4. 상대 팀과 내 팀의 스쿼드 정보 가져오기
+    // 6. 상대 팀과 내 팀의 스쿼드 정보 가져오기
     const team1 = await prisma.squad.findUnique({
       where: { squad_id: currentAccountSquad.squad_id },
       include: { accounts: true },
     });
 
     const team2 = await prisma.squad.findUnique({
-      where: { squad_id: opponentAccountSquad.squad_id },
+      where: { squad_id: opponentAccount.squad_id }, // opponentAccount에서 바로 squad_id를 사용
       include: { accounts: true },
     });
 
     const team1Name = team1.accounts.account_name;
     const team2Name = team2.accounts.account_name;
 
-    // 5. 경기를 시작하고 결과 반환
+    // 7. 경기를 시작하고 결과 반환
     const gameResult = await startGame(team1.squad_id, team2.squad_id);
 
-    // 6. 골 로그에 팀 이름을 account_name으로 추가
+    // 8. 골 로그에 팀 이름을 account_name으로 추가
     const goalLog = gameResult.goalLog.map((log) => ({
       team: log.team === "팀 1" ? team1Name : team2Name,
       minute: log.minute,
       goal: log.goal,
     }));
 
-    // 7. MMR 변경 내용 포함하여 반환
+    // 9. MMR 변경 내용 포함하여 반환
     const team1MMRChange = calculateMMRChange(
       rankingDiff,
       gameResult.team1Goals,
@@ -248,5 +268,4 @@ router.post("/start-game/:accountId", authMiddleware, async (req, res) => {
       .json({ message: "게임을 시작하는 중에 오류가 발생했습니다." });
   }
 });
-
 export default router;
