@@ -39,3 +39,5 @@ router.get('/cash/:email' , authMiddleware, async(req , res) => {
       return res.status(500).json({message : "캐시구메 에러가 발생했습니다"})
     }
   })
+
+export default router;
