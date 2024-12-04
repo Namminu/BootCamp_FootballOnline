@@ -2,6 +2,7 @@ import express from "express";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import { prisma } from "../utils/prisma/index.js";
 import { Prisma } from "@prisma/client";
+import { calculateSquadAverageStats, playGame, calculateMMR } from './gameLogic.router.js';
 
 const router = express.Router();
 

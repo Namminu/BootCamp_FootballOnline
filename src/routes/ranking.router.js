@@ -32,6 +32,7 @@ router.get("/ranking", async (req, res, next) => {
     // 3. 랭킹 순서를 추가하기 위해 각 계정에 순위를 매깁니다.
     const rankedAccounts = rankings.map((account, index) => ({
       rank: index + 1, // 1부터 시작하는 랭킹
+      account_id: account.account_id,
       account_name: account.account_name,
       mmr: account.mmr,
     }));
