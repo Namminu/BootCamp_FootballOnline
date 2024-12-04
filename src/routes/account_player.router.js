@@ -4,7 +4,7 @@ import { prisma } from '../../utils/prisma/index.js'
 const router = express.Router();
 
 // 보유 선수 조회 API
-router.get('/myPlayers/:accountId', async (req, res, next) => {
+router.get('/myPlayers/:accountId', middleware, async (req, res, next) => {
     try {
         const accountId = +req.params.accountId;
         // MyPlayuers 테이블과 Players 테이블 Join 데이터 할당
