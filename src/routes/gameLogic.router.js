@@ -33,32 +33,47 @@ export async function calculateSquadAverageStats(accountId) {
   }
 
   // 3. 각 멤버의 능력치 평균 구하기
-  const playerAverages = [];
+  const playerIds = [
+    squadMembers.squad_player1,
+    squadMembers.squad_player2,
+    squadMembers.squad_player3,
+  ];
 
-  // 선수 1, 2, 3의 평균 능력치 계산
-  for (let i = 1; i <= 3; i++) {
-    const player = await prisma.players.findUnique({
-      where: {
-        player_id: squadMembers[`squad_player${i}`],
-      },
-      select: {
-        player_speed: true,
-        player_finish: true,
-        player_power: true,
-        player_defense: true,
-        player_stamina: true,
-      },
-    });
-
-    const playerAverage =
+  // 선수 능력치 계산 함수
+  const calculatePlayerAverage = (player) => {
+    if (!player) {
+      throw new Error("선수 데이터를 찾을 수 없습니다.");
+    }
+    return (
       (player.player_speed +
         player.player_finish +
         player.player_power +
         player.player_defense +
         player.player_stamina) /
-      5;
-    playerAverages.push(playerAverage);
-  }
+      5
+    );
+  };
+
+  // 병렬로 선수들의 능력치 데이터를 가져오기
+  const players = await Promise.all(
+    playerIds.map((playerId) =>
+      prisma.players.findUnique({
+        where: { player_id: playerId },
+        select: {
+          player_speed: true,
+          player_finish: true,
+          player_power: true,
+          player_defense: true,
+          player_stamina: true,
+        },
+      })
+    )
+  );
+
+  // 각 선수의 평균 능력치 계산
+  const playerAverages = players.map((player) =>
+    calculatePlayerAverage(player)
+  );
 
   // 4. 팀 평균 능력치 계산
   const squadAverage =
@@ -119,60 +134,62 @@ export function playGame(
   };
 }
 
-export function calculateMMR(
+//mmr
+export async function calculateMMR(
   currentRank,
   opponentRank,
   currentWon,
-  currentMMR,
-  opponentMMR
+  currentAccountId,
+  opponentAccountId
 ) {
   let currentMMRChange = 0;
   let opponentMMRChange = 0;
 
   const rankDifference = currentRank - opponentRank; // 랭킹 차이 계산
 
-  // 랭킹 차이에 따른 MMR 변동 계산
-  if (rankDifference === 1) {
-    if (currentWon) {
-      currentMMRChange = 15;
-      opponentMMRChange = -10;
-    } else {
-      currentMMRChange = -10;
-      opponentMMRChange = 15;
-    }
-  } else if (rankDifference === 2) {
-    if (currentWon) {
-      currentMMRChange = 20;
-      opponentMMRChange = -5;
-    } else {
-      currentMMRChange = -5;
-      opponentMMRChange = 20;
-    }
-  } else if (rankDifference === -1) {
-    if (currentWon) {
-      currentMMRChange = 10;
-      opponentMMRChange = -15;
-    } else {
-      currentMMRChange = -15;
-      opponentMMRChange = 10;
-    }
-  } else if (rankDifference === -2) {
-    if (currentWon) {
-      currentMMRChange = 5;
-      opponentMMRChange = -20;
-    } else {
-      currentMMRChange = -20;
-      opponentMMRChange = 5;
-    }
-  } else if (rankDifference === 0) {
-    if (currentWon) {
-      currentMMRChange = 10;
-      opponentMMRChange = -5;
-    } else {
-      currentMMRChange = -5;
-      opponentMMRChange = 10;
-    }
+  // 각 랭킹 차이에 따른 MMR 변동값 정의
+  const mmrChanges = {
+    1: { win: 15, loss: -10 }, // 승리 +15, 패배 -10
+    2: { win: 20, loss: -5 }, // 승리 +20, 패배 -5
+    "-1": { win: 10, loss: -15 }, // 승리 +10, 패배 -15
+    "-2": { win: 5, loss: -20 }, // 승리 +5, 패배 -20
+    0: { win: 10, loss: -5 }, // 동일 랭크일 경우
+  };
+
+  // MMR 변동값을 가져오기 (기본값은 0으로 설정)
+  const change = mmrChanges[rankDifference] || { win: 0, loss: 0 };
+
+  // MMR 변동 계산
+  if (currentWon === true) {
+    currentMMRChange = change.win;
+    opponentMMRChange = change.win * -1;
+  } else if (currentWon === false) {
+    currentMMRChange = change.loss;
+    opponentMMRChange = change.loss * -1;
   }
 
-  return { currentMMRChange, opponentMMRChange };
+  // 현재 계정과 상대 계정의 MMR을 업데이트
+  const currentAccount = await prisma.accounts.findUnique({
+    where: { account_id: currentAccountId },
+  });
+  const opponentAccount = await prisma.accounts.findUnique({
+    where: { account_id: opponentAccountId },
+  });
+
+  const updatedCurrentAccount = await prisma.accounts.update({
+    where: { account_id: currentAccountId },
+    data: { mmr: currentAccount.mmr + currentMMRChange },
+  });
+
+  const updatedOpponentAccount = await prisma.accounts.update({
+    where: { account_id: opponentAccountId },
+    data: { mmr: opponentAccount.mmr + opponentMMRChange },
+  });
+
+  return {
+    updatedCurrentAccount,
+    updatedOpponentAccount,
+    currentMMRChange,
+    opponentMMRChange,
+  };
 }

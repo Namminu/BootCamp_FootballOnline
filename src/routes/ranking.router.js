@@ -26,7 +26,7 @@ router.get("/ranking", async (req, res, next) => {
 
     // 2. 데이터가 없으면 빈 배열을 반환하거나 적절한 메시지 반환
     if (rankings.length === 0) {
-      return res.status(200).json({ message: "스쿼드가 없는 사용자들은 랭킹에 포함되지 않습니다." });
+      return res.status(400).json({ message: "스쿼드가 없는 사용자들은 랭킹에 포함되지 않습니다." });
     }
 
     // 3. 랭킹 순서를 추가하기 위해 각 계정에 순위를 매깁니다.
