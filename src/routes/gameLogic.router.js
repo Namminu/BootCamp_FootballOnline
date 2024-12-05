@@ -22,7 +22,6 @@ export async function calculateSquadAverageStats(accountId) {
     },
   });
 
-
   // 3. 각 멤버의 능력치 평균 구하기
   const playerIds = [
     squadMembers.squad_player1,
@@ -90,8 +89,8 @@ export function playGame(
   // 15분 동안 진행되는 경기
   for (let minute = 1; minute <= maxMinutes; minute++) {
     // 매 분마다 랜덤 숫자 계산
-    const currentTeamChance = Math.random() * 200; //
-    const opponentTeamChance = Math.random() * 200; //
+    const currentTeamChance = Math.floor(Math.random() * 200) + 1; // 1부터 200까지의 정수
+    const opponentTeamChance = Math.floor(Math.random() * 200) + 1; // 1부터 200까지의 정수
 
     // 현재 팀의 골 확률을 능력치 기반으로 비교
     if (currentTeamChance < currentTeamAverage) {
@@ -158,7 +157,7 @@ export async function calculateMMR(
     opponentMMRChange = change.loss * -1;
   }
 
-  // 현재 계정과 상대 계정의 MMR을 업데이트
+  // 현재 계정과 상대 계정의 MMR을 가져오기
   const currentAccount = await prisma.accounts.findUnique({
     where: { account_id: currentAccountId },
   });
@@ -166,20 +165,25 @@ export async function calculateMMR(
     where: { account_id: opponentAccountId },
   });
 
-  const updatedCurrentAccount = await prisma.accounts.update({
+  // MMR 변화 후 계산
+  const updatedCurrentMMR = currentAccount.mmr + currentMMRChange;
+  const updatedOpponentMMR = opponentAccount.mmr + opponentMMRChange;
+
+  // MMR 업데이트
+  await prisma.accounts.update({
     where: { account_id: currentAccountId },
-    data: { mmr: currentAccount.mmr + currentMMRChange },
+    data: { mmr: updatedCurrentMMR },
   });
 
-  const updatedOpponentAccount = await prisma.accounts.update({
+  await prisma.accounts.update({
     where: { account_id: opponentAccountId },
-    data: { mmr: opponentAccount.mmr + opponentMMRChange },
+    data: { mmr: updatedOpponentMMR },
   });
 
   return {
-    updatedCurrentAccount,
-    updatedOpponentAccount,
     currentMMRChange,
     opponentMMRChange,
+    updatedCurrentMMR,
+    updatedOpponentMMR,
   };
 }

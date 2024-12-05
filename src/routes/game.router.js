@@ -20,9 +20,14 @@ router.get("/lobby", authMiddleware, async (req, res, next) => {
         squad: true, // squad 정보를 가져옵니다.
       },
     });
-    
+
     const { squad } = currentAccount;
-    if (!squad || !squad.squad_player1 || !squad.squad_player2 || !squad.squad_player3) {
+    if (
+      !squad ||
+      !squad.squad_player1 ||
+      !squad.squad_player2 ||
+      !squad.squad_player3
+    ) {
       return res.status(400).json({ message: "스쿼드가 완전하지 않습니다." });
     }
 
@@ -49,7 +54,9 @@ router.get("/lobby", authMiddleware, async (req, res, next) => {
 
     // 3. 데이터가 없으면 "등록된 유저가 없다"는 메시지 반환
     if (rankings.length === 0) {
-      return res.status(200).json({ message: "현재 게임을 시작할 수 있는 유저가 없습니다." });
+      return res
+        .status(200)
+        .json({ message: "현재 게임을 시작할 수 있는 유저가 없습니다." });
     }
 
     // 4. 각 계정에 랭킹 순서를 부여
@@ -184,6 +191,8 @@ router.post("/game", authMiddleware, async (req, res, next) => {
     const transactionResult = await prisma.$transaction(async (prisma) => {
       let currentMMRChange = 0;
       let opponentMMRChange = 0;
+      let updatedCurrentMMR = 0;
+      let updatedOpponentMMR = 0;
 
       if (gameResult === "승리") {
         const result = await calculateMMR(
@@ -195,16 +204,8 @@ router.post("/game", authMiddleware, async (req, res, next) => {
         );
         currentMMRChange = result.currentMMRChange;
         opponentMMRChange = result.opponentMMRChange;
-
-        await prisma.accounts.update({
-          where: { account_id: currentAccountId },
-          data: { mmr: { increment: currentMMRChange } },
-        });
-
-        await prisma.accounts.update({
-          where: { account_id: opponentAccountId },
-          data: { mmr: { increment: opponentMMRChange } },
-        });
+        updatedCurrentMMR = result.updatedCurrentMMR;
+        updatedOpponentMMR = result.updatedOpponentMMR;
       } else if (gameResult === "패배") {
         const result = await calculateMMR(
           currentRank,
@@ -215,28 +216,30 @@ router.post("/game", authMiddleware, async (req, res, next) => {
         );
         currentMMRChange = result.currentMMRChange;
         opponentMMRChange = result.opponentMMRChange;
-
-        await prisma.accounts.update({
-          where: { account_id: currentAccountId },
-          data: { mmr: { increment: currentMMRChange } },
-        });
-
-        await prisma.accounts.update({
-          where: { account_id: opponentAccountId },
-          data: { mmr: { increment: opponentMMRChange } },
-        });
+        updatedCurrentMMR = result.updatedCurrentMMR;
+        updatedOpponentMMR = result.updatedOpponentMMR;
       }
 
-      return { gameResult, currentMMRChange, opponentMMRChange };
+      return {
+        gameResult,
+        currentMMRChange,
+        opponentMMRChange,
+        updatedCurrentMMR,
+        updatedOpponentMMR,
+      };
     });
 
+    // 7. 응답 반환
     return res.status(200).json({
       message: `게임 결과: ${gameResult}`,
-      currentTeamScore,
-      opponentTeamScore,
+      gameDetails: `${currentTeamData.accountName} ${currentTeamScore} : ${opponentTeamScore} ${opponentTeamData.accountName}`,
       goals,
-      currentMMRChange: transactionResult.currentMMRChange,
-      opponentMMRChange: transactionResult.opponentMMRChange,
+      mmrChanges: {
+        currentAccountMMRChange: transactionResult.currentMMRChange,
+        opponentAccountMMRChange: transactionResult.opponentMMRChange,
+        updatedCurrentMMR: transactionResult.updatedCurrentMMR,
+        updatedOpponentMMR: transactionResult.updatedOpponentMMR,
+      },
     });
   } catch (error) {
     console.error("Error during game processing:", error);
