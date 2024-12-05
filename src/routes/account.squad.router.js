@@ -157,8 +157,8 @@ router.delete('/squad/:playerId/setdown', authMiddleware, async (req, res, next)
             data: updateData
         });
         // 로직 종료
-        const name = await prisma.players.findFirst({ where: { player_id: playerId } });
-        const message = `${name} 선수를 스쿼드에서 제외했습니다`;
+        const player = await prisma.players.findFirst({ where: { player_id: playerId } });
+        const message = `${player.player_name} 선수를 스쿼드에서 제외했습니다`;
         return res.status(200).json(message);
     } catch (err) {
         console.log(err);
