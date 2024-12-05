@@ -1,13 +1,11 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import AccountsRouter from "./routes/accounts.router.js";
-// import AccountPlayerRouter from "./routes/account.player.router.js";
-// import AccountSquadRouter from "./routes/account.squad.router.js";
+import AccountPlayerRouter from "./routes/account.player.router.js";
+import AccountSquadRouter from "./routes/account.squad.router.js";
 import GameRouter from "./routes/game.router.js";
 // import PlayerRouter from "./routes/player.router.js";
 //import AccountsRouter from "./routes/accounts.router.js";
-// import AccountPlayerRouter from "./routes/account.player.router.js";
-// import AccountSquadRouter from "./routes/account.squad.router.js";
 import PlayerRouter from "./routes/player.router.js";
 import PlayerDrawRouter from "./routes/player.draw.router.js";
 import PlayerEnhanceRouter from "./routes/player.enhance.router.js";
@@ -23,15 +21,15 @@ dotenv.config();
 app.use(express.json());
 app.use(cookieParser());
 app.use("/api", [
-   AccountsRouter,
-//   AccountPlayerRouter,
-//   AccountSquadRouter,
+  AccountsRouter,
+  AccountPlayerRouter,
+  AccountSquadRouter,
   GameRouter,
-//   PlayerRouter,
-   PlayerRouter,
-   PlayerDrawRouter,
-   PlayerEnhanceRouter,
-   RankingRouter,
+  //   PlayerRouter,
+  PlayerRouter,
+  PlayerDrawRouter,
+  PlayerEnhanceRouter,
+  RankingRouter,
 ]);
 app.use(errorHandlerMiddleware);
 
