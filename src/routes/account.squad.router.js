@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/squad/:targetId', authMiddleware, async (req, res, next) => {
     try {
         // JWT 를 통해 받은 로그인 한 계정의 ID값
-        const myAccountId = req.account.accountId;
+        const myAccountId = +req.account.account_id;
         // 로그인이 되어 있지 않을 경우 처리
         if (!myAccountId) return res.status(401).json({ message: "로그인이 필요합니다." });
 
@@ -85,7 +85,7 @@ router.post('/squad/:playerId/setup', authMiddleware, async (req, res, next) => 
     try {
         // 데이터 유효성 검사
         if (!req.account) return res.status(401).json({ message: "로그인이 필요합니다." });
-        const accountId = +req.account.accountId;
+        const accountId = +req.account.account_id;
         const players = await prisma.myPlayers.findMany({ where: { account_id: accountId } });
         if (players.length === 0) return res.status(404).json({ message: "현재 보유한 선수가 존재하지 않습니다." });
         const squad = await prisma.squad.findUnique({ where: { account_id: accountId } });
@@ -130,7 +130,7 @@ router.delete('/squad/:playerId/setdown', authMiddleware, async (req, res, next)
     try {
         // 데이터 유효성 검사
         if (!req.account) return res.status(401).json({ message: "로그인이 필요합니다." });
-        const accountId = +req.account.accountId;
+        const accountId = +req.account.account_id;
 
         const squad = await prisma.squad.findUnique({
             where: { account_id: accountId },

@@ -7,7 +7,7 @@ const router = express.Router();
 // 보유 선수 조회 API
 router.get('/players/getPlayer', authMiddleware, async (req, res, next) => {
     try {
-        const accountId = +req.account.accountId;
+        const accountId = +req.account.account_id;
         if (!accountId) res.status(404).json({ message: "해당 계정이 존재하지 않습니다." });
         // MyPlayers 테이블과 Players 테이블 Join 데이터 할당
         const players = await prisma.myPlayers.findMany({
