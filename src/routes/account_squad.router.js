@@ -83,22 +83,38 @@ router.get('/squad/:targetId', authMiddleware, async (req, res, next) => {
 // 스쿼드 추가 API
 router.post('/squad/:playerId/setup', authMiddleware, async (req, res, next) => {
     try {
+        // 데이터 유효성 검사
         if (!req.account) return res.status(401).json({ message: "로그인이 필요합니다." });
         const accountId = +req.account.accountId;
-        // accountId 기반으로 MyPlayers 테이블에서 보유 선수 > 0 인지 탐색
-        // 보유 선수 >= 3 이면 return 예외 처리
+        const players = await prisma.myPlayers.findMany({ where: { account_id: accountId } });
+        if (players.length === 0) return res.status(404).json({ message: "현재 보유한 선수가 존재하지 않습니다." });
+        const squad = await prisma.squad.findUnique({ where: { account_id: accountId } });
+        if (squad.length >= 3) return res.status(400).json({ message: "더이상 스쿼드를 추가할 수 없습니다." });
 
-        // 보유한 선수가 없을 경우 return 예외 처리
-
-        // 있을 경우 params 로 전달한 스쿼드에 추가하려는 선수 할당
+        // params 데이터 유효성 검사
         const playerId = +req.params.playerId;
-        // 선수 id를 다시 MyPlayers 테이블에서 탐색, 보유한 선수인지 조회
-        //if(!playerId) return res.status(404).json({message : "현재 해당 선수를 보유하고 있지 않습니다."});
+        const player = await prisma.myPlayers.findUnique({
+            where: {
+                player_id: playerId,
+                account_id: accountId
+            }
+        });
+        if (!player) return res.status(404).json({ message: "현재 해당 선수를 보유하고 있지 않습니다." });
 
-        // 있을 경우 Squad 테이블로 전달 : player1, 2, 3 순으로 순차 전달해야됨
+        // Squad 테이블의 빈 컬럼에 데이터 등록
+        let updateData = null;
+        if (!squad.squad_player1) updateData = { squad_player1: playerId };
+        else if (!squad.squad_player2) updateData = { squad_player2: playerId };
+        else if (!squad.squad_player3) updateData = { squad_player3: playerId };
+        else return res.status(400).json({ message: "더이상 스쿼드를 추가할 수 없습니다." });
 
-        // 이후 종료
-        const message = `${playerId.player_name} 선수를 스쿼드에 등록했습니다`;
+        await prisma.squad.update({
+            where: { squad_id: squad.squad_id },
+            data: updateData
+        });
+
+        // 로직 종료
+        const message = `${player.player_name} 선수를 스쿼드에 등록했습니다`;
         return res.status(200).json(message);
     } catch (err) {
         console.log(err);
