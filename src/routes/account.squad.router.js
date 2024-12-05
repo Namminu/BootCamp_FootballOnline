@@ -132,21 +132,33 @@ router.delete('/squad/:playerId/setdown', authMiddleware, async (req, res, next)
         if (!req.account) return res.status(401).json({ message: "로그인이 필요합니다." });
         const accountId = +req.account.accountId;
 
+        const squad = await prisma.squad.findUnique({
+            where: { account_id: accountId },
+            select: {
+                squad_id: true,
+                squad_player1: true,
+                squad_player2: true,
+                squad_player3: true
+            }
+        });
+        if (!squad) return res.status(404).json({ message: "스쿼드가 등록되어 있지 않습니다." });
+
         // Squad 테이블에서 params 데이터 조회
         const playerId = +req.params.playerId;
-        const player = await prisma.squad.findUnique({
-            where: { account_id: accountId },
-
-        });
-        if (!player) return res.status(404).json({ message: "스쿼드에 해당 선수가 등록되어 있지 않습니다." });
+        let updateData = {};
+        if (squad.squad_player1 === playerId) updateData = { squad_player1: null };
+        else if (squad.squad_player2 === playerId) updateData = { squad_player2: null };
+        else if (squad.squad_player3 === playerId) updateData = { squad_player3: null };
+        else return res.status(404).json({ message: "해당 선수가 스쿼드에 등록되어 있지 않습니다." });
 
         // 조회 완료 후 데이터 삭제
-        await prisma.squad.delete({
-            where: { account_id: accountId },
-            include: {}
+        await prisma.squad.update({
+            where: { squad_id: squad_id },
+            data: updateData
         });
         // 로직 종료
-        const message = `${player.player_name} 선수를 스쿼드에서 제외했습니다`;
+        const name = await prisma.players.findFirst({ where: { player_id: playerId } });
+        const message = `${name} 선수를 스쿼드에서 제외했습니다`;
         return res.status(200).json(message);
     } catch (err) {
         console.log(err);
