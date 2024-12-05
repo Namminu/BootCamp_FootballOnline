@@ -134,8 +134,14 @@ export function playGame(
   };
 }
 
-//mmr 변동함수
-export function calculateMMR(currentRank, opponentRank, currentWon) {
+//mmr
+export async function calculateMMR(
+  currentRank,
+  opponentRank,
+  currentWon,
+  currentAccountId,
+  opponentAccountId
+) {
   let currentMMRChange = 0;
   let opponentMMRChange = 0;
 
@@ -143,35 +149,47 @@ export function calculateMMR(currentRank, opponentRank, currentWon) {
 
   // 각 랭킹 차이에 따른 MMR 변동값 정의
   const mmrChanges = {
-    1: { win: 15, loss: -10 },
-    2: { win: 20, loss: -5 },
-    "-1": { win: 10, loss: -15 },
-    "-2": { win: 5, loss: -20 },
+    1: { win: 15, loss: -10 }, // 승리 +15, 패배 -10
+    2: { win: 20, loss: -5 }, // 승리 +20, 패배 -5
+    "-1": { win: 10, loss: -15 }, // 승리 +10, 패배 -15
+    "-2": { win: 5, loss: -20 }, // 승리 +5, 패배 -20
     0: { win: 10, loss: -5 }, // 동일 랭크일 경우
   };
 
   // MMR 변동값을 가져오기 (기본값은 0으로 설정)
   const change = mmrChanges[rankDifference] || { win: 0, loss: 0 };
 
-  if (currentWon) {
-    // 현재 팀이 승리했을 때
-    currentMMRChange = change.win; // 승리 팀은 win 값 만큼 MMR 증가
-    opponentMMRChange = change.loss; // 패배 팀은 loss 값 만큼 MMR 감소
+  // MMR 변동 계산
+  if (currentWon === true) {
+    currentMMRChange = change.win;
+    opponentMMRChange = change.win * -1;
   } else if (currentWon === false) {
-    // 현재 팀이 패배했을 때
-    currentMMRChange = change.loss; // 패배 팀은 loss 값 만큼 MMR 감소
-    opponentMMRChange = change.win; // 승리 팀은 win 값 만큼 MMR 증가
+    currentMMRChange = change.loss;
+    opponentMMRChange = change.loss * -1;
   }
 
-  // 무승부 시 MMR 변동 없음
-  if (currentWon === null) {
-    currentMMRChange = 0;
-    opponentMMRChange = 0;
-  }
+  // 현재 계정과 상대 계정의 MMR을 업데이트
+  const currentAccount = await prisma.accounts.findUnique({
+    where: { account_id: currentAccountId },
+  });
+  const opponentAccount = await prisma.accounts.findUnique({
+    where: { account_id: opponentAccountId },
+  });
 
-  // MMR 변동이 음수일 경우 0 이하로 내려가지 않도록 제한
-  currentMMRChange = Math.max(currentMMRChange, 0);
-  opponentMMRChange = Math.max(opponentMMRChange, 0);
+  const updatedCurrentAccount = await prisma.accounts.update({
+    where: { account_id: currentAccountId },
+    data: { mmr: currentAccount.mmr + currentMMRChange },
+  });
 
-  return { currentMMRChange, opponentMMRChange };
+  const updatedOpponentAccount = await prisma.accounts.update({
+    where: { account_id: opponentAccountId },
+    data: { mmr: opponentAccount.mmr + opponentMMRChange },
+  });
+
+  return {
+    updatedCurrentAccount,
+    updatedOpponentAccount,
+    currentMMRChange,
+    opponentMMRChange,
+  };
 }
