@@ -10,11 +10,6 @@ export async function calculateSquadAverageStats(accountId) {
     },
   });
 
-  if (!account || !account.squad) {
-    // 스쿼드가 없으면 404 에러 반환
-    throw new Error("스쿼드가 존재하지 않습니다.");
-  }
-
   const squadId = account.squad.squad_id;
 
   // 2. 해당 스쿼드에 속한 모든 멤버들의 능력치 조회
@@ -27,15 +22,6 @@ export async function calculateSquadAverageStats(accountId) {
     },
   });
 
-  // 스쿼드 멤버가 부족하거나 null인 경우
-  if (
-    !squadMembers ||
-    !squadMembers.squad_player1 ||
-    !squadMembers.squad_player2 ||
-    !squadMembers.squad_player3
-  ) {
-    throw new Error("스쿼드가 완전하지 않습니다.");
-  }
 
   // 3. 각 멤버의 능력치 평균 구하기
   const playerIds = [
