@@ -128,7 +128,17 @@ router.post('/squad/:playerId/setup', authMiddleware, async (req, res, next) => 
 // 스쿼드 삭제 API
 router.delete('/squad/:playerId/setdown', authMiddleware, async (req, res, next) => {
     try {
+        // 데이터 유효성 검사
+        if (!req.account) return res.status(401).json({ message: "로그인이 필요합니다." });
 
+        // Squad 테이블에서 params 데이터 조회
+        const player = 0;
+
+        // 조회 완료 후 데이터 삭제
+
+        // 로직 종료
+        const message = `${player.player_name} 선수를 스쿼드에서 제외했습니다`;
+        return res.status(200).json(message);
     } catch (err) {
         console.log(err);
         return res.status(500).json({
