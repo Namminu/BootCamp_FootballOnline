@@ -11,17 +11,34 @@ const router = express.Router();
 
 router.get("/lobby", authMiddleware, async (req, res, next) => {
   try {
-    // 인증된 계정의 ID (authMiddleware에서 설정된 req.account)
     const { account_id: currentAccountId } = req.account;
-    // 1. 스쿼드를 가지고 있는 계정만 조회 (스쿼드가 있는 유저만 랭킹에 포함)
+
+    // 1. 현재 계정의 스쿼드 데이터 가져오기
+    const currentAccount = await prisma.accounts.findUnique({
+      where: { account_id: currentAccountId },
+      select: {
+        squad: true, // squad 정보를 가져옵니다.
+      },
+    });
+
+    const { squad } = currentAccount;
+    if (
+      !squad ||
+      !squad.squad_player1 ||
+      !squad.squad_player2 ||
+      !squad.squad_player3
+    ) {
+      return res.status(400).json({ message: "스쿼드가 완전하지 않습니다." });
+    }
+
+    // 2. 스쿼드가 완전하다면, 매칭 가능한 유저들을 찾아서 반환
     const rankings = await prisma.accounts.findMany({
       where: {
         squad: {
-          // squad_player1, squad_player2, squad_player3 중 하나라도 null이 아닌 경우
           AND: [
-            { squad_player1: { not: +null } },
-            { squad_player2: { not: +null } },
-            { squad_player3: { not: +null } },
+            { squad_player1: { not: null } },
+            { squad_player2: { not: null } },
+            { squad_player3: { not: null } },
           ],
         },
       },
@@ -34,42 +51,48 @@ router.get("/lobby", authMiddleware, async (req, res, next) => {
         mmr: "desc", // MMR 내림차순 정렬
       },
     });
-    // 2. 데이터가 없으면 "등록된 유저가 없다"는 메시지 반환
+
+    // 3. 데이터가 없으면 "등록된 유저가 없다"는 메시지 반환
     if (rankings.length === 0) {
       return res
         .status(200)
         .json({ message: "현재 게임을 시작할 수 있는 유저가 없습니다." });
     }
-    // 3. 각 계정에 랭킹 순서를 부여합니다.
+
+    // 4. 각 계정에 랭킹 순서를 부여
     const rankedAccounts = rankings.map((account, index) => ({
       rank: index + 1, // 1부터 시작하는 랭킹
       account_id: account.account_id,
       account_name: account.account_name,
       mmr: account.mmr,
     }));
-    // 4. 현재 계정의 랭킹을 계산합니다.
+
+    // 5. 현재 계정의 랭킹 계산
     const currentRank =
       rankedAccounts.findIndex(
         (account) => account.account_id === currentAccountId
       ) + 1;
-    // 5. 매칭 가능한 계정 찾기 (자기 자신을 제외한 랭킹 ±2 범위)
+
+    // 6. 매칭 가능한 계정 찾기 (자기 자신을 제외한 랭킹 ±2 범위)
     const matchedAccounts = rankedAccounts.filter((account) => {
       const rankDifference = Math.abs(account.rank - currentRank);
-      // 자기 자신을 제외하고, 랭킹 차이가 ±2 범위 내인 계정만 포함
       return account.account_id !== currentAccountId && rankDifference <= 2;
     });
-    // 6. 매칭된 계정들이 없으면 알림
+
+    // 7. 매칭된 계정들이 없으면 알림
     if (matchedAccounts.length === 0) {
       return res.status(200).json({
         message: "현재 랭킹 차이가 너무 커서 매칭할 수 있는 유저가 없습니다.",
       });
     }
-    // 7. 매칭 가능한 유저들을 반환
+
+    // 8. 매칭 가능한 유저들을 반환
     return res.status(200).json({
       message: "매칭 가능한 계정들",
       data: matchedAccounts,
     });
   } catch (error) {
+    console.error("Error during lobby processing:", error);
     next(error); // 에러 핸들러로 에러 전달
   }
 });
@@ -138,7 +161,9 @@ router.post("/game", authMiddleware, async (req, res, next) => {
       currentTeamData = await calculateSquadAverageStats(currentAccountId);
     } catch (error) {
       // 404 에러 반환 (스쿼드가 없거나 멤버가 부족한 경우)
-      return res.status(404).json({ message: "스쿼드가 완전하지 않습니다"  });
+      return res
+        .status(404)
+        .json({ message: "나의 스쿼드가 완전하지 않습니다" });
     }
 
     let opponentTeamData;
@@ -146,7 +171,9 @@ router.post("/game", authMiddleware, async (req, res, next) => {
       opponentTeamData = await calculateSquadAverageStats(opponentAccountId);
     } catch (error) {
       // 404 에러 반환 (상대 스쿼드가 없거나 멤버가 부족한 경우)
-      return res.status(404).json({ message: "스쿼드가 완전하지 않습니다" });
+      return res
+        .status(404)
+        .json({ message: "상대의 스쿼드가 완전하지 않거나 없는 상대입니다" });
     }
 
     // 5. 게임 진행
@@ -164,6 +191,8 @@ router.post("/game", authMiddleware, async (req, res, next) => {
     const transactionResult = await prisma.$transaction(async (prisma) => {
       let currentMMRChange = 0;
       let opponentMMRChange = 0;
+      let updatedCurrentMMR = 0;
+      let updatedOpponentMMR = 0;
 
       if (gameResult === "승리") {
         const result = await calculateMMR(
@@ -175,16 +204,8 @@ router.post("/game", authMiddleware, async (req, res, next) => {
         );
         currentMMRChange = result.currentMMRChange;
         opponentMMRChange = result.opponentMMRChange;
-
-        await prisma.accounts.update({
-          where: { account_id: currentAccountId },
-          data: { mmr: { increment: currentMMRChange } },
-        });
-
-        await prisma.accounts.update({
-          where: { account_id: opponentAccountId },
-          data: { mmr: { increment: opponentMMRChange } },
-        });
+        updatedCurrentMMR = result.updatedCurrentMMR;
+        updatedOpponentMMR = result.updatedOpponentMMR;
       } else if (gameResult === "패배") {
         const result = await calculateMMR(
           currentRank,
@@ -195,28 +216,30 @@ router.post("/game", authMiddleware, async (req, res, next) => {
         );
         currentMMRChange = result.currentMMRChange;
         opponentMMRChange = result.opponentMMRChange;
-
-        await prisma.accounts.update({
-          where: { account_id: currentAccountId },
-          data: { mmr: { increment: currentMMRChange } },
-        });
-
-        await prisma.accounts.update({
-          where: { account_id: opponentAccountId },
-          data: { mmr: { increment: opponentMMRChange } },
-        });
+        updatedCurrentMMR = result.updatedCurrentMMR;
+        updatedOpponentMMR = result.updatedOpponentMMR;
       }
 
-      return { gameResult, currentMMRChange, opponentMMRChange };
+      return {
+        gameResult,
+        currentMMRChange,
+        opponentMMRChange,
+        updatedCurrentMMR,
+        updatedOpponentMMR,
+      };
     });
 
+    // 7. 응답 반환
     return res.status(200).json({
       message: `게임 결과: ${gameResult}`,
-      currentTeamScore,
-      opponentTeamScore,
+      gameDetails: `${currentTeamData.accountName} ${currentTeamScore} : ${opponentTeamScore} ${opponentTeamData.accountName}`,
       goals,
-      currentMMRChange: transactionResult.currentMMRChange,
-      opponentMMRChange: transactionResult.opponentMMRChange,
+      mmrChanges: {
+        currentAccountMMRChange: transactionResult.currentMMRChange,
+        opponentAccountMMRChange: transactionResult.opponentMMRChange,
+        updatedCurrentMMR: transactionResult.updatedCurrentMMR,
+        updatedOpponentMMR: transactionResult.updatedOpponentMMR,
+      },
     });
   } catch (error) {
     console.error("Error during game processing:", error);
