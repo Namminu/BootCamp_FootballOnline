@@ -30,23 +30,18 @@ router.get('/squad/:targetId', authMiddleware, async (req, res, next) => {
       });
 
       // 스쿼드가 존재 하지 않을 경우 처리
-      if (!squad)
-        return res
-          .status(404)
-          .json({ message: "해당 계정은 스쿼드를 보유하고 있지 않습니다." });
+      if (!squad) return res.status(404).json({ message: "해당 계정은 스쿼드를 보유하고 있지 않습니다." });
 
       // 스쿼드 데이터 매핑
       const playerSlots = [squad.players1, squad.players2, squad.players3];
-      const squadList = playerSlots
-        .map((slot, idx) => {
-          if (!slot) return null;
-          const myPlayerId = slot.players.player_id;
-          return {
-            [`Player${idx + 1}`]: `+${slot.enhanced} ${slot.players.player_name}`,
-            myPlayer_id: myPlayerId
-          };
-        })
-        .filter(Boolean);
+      const squadList = playerSlots.map((slot, idx) => {
+        if (!slot) return null;
+        const myPlayer_id = slot.myPlayer_id;
+        return {
+          [`Player${idx + 1}`]: `+${slot.enhanced} ${slot.players.player_name}`,
+          myPlayer_id
+        };
+      }).filter(Boolean);
 
       return res.status(200).json({ [`${target.account_name} 님의 스쿼드 `]: squadList });
     }
@@ -68,10 +63,10 @@ router.get('/squad/:targetId', authMiddleware, async (req, res, next) => {
       const playerSlots = [squad.players1, squad.players2, squad.players3];
       const squadList = playerSlots.map((slot, idx) => {
         if (!slot) return null;
-        const myPlayerId = slot.players.player_id;
+        const myPlayer_id = slot.myPlayer_id;
         return {
           [`Player${idx + 1}`]: `+${slot.enhanced} ${slot.players.player_name}`,
-          myPlayer_id: myPlayerId
+          myPlayer_id
         };
       }).filter(Boolean);
 
@@ -99,7 +94,7 @@ router.post("/squad/:myPlayerId/setup", authMiddleware, async (req, res, next) =
 
     // params 데이터 유효성 검사
     const myPlayerId = +req.params.myPlayerId;
-    const player = await prisma.myPlayers.findFirst({
+    const player = await prisma.myPlayers.findUnique({
       where: {
         myPlayer_id: myPlayerId,
         account_id: accountId
@@ -107,10 +102,10 @@ router.post("/squad/:myPlayerId/setup", authMiddleware, async (req, res, next) =
     });
     if (!player) return res.status(404).json({ message: "현재 해당 선수를 보유하고 있지 않습니다." });
 
-    let squad = await prisma.squad.findUnique({ where: { account_id: accountId } });
-    if (squad && squad.length >= 3) return res.status(400).json({ message: "더이상 스쿼드를 추가할 수 없습니다." });
+    const squad = await prisma.squad.findUnique({ where: { account_id: accountId } });
+    if (squad && squad.length >= 3) return res.status(400).json({ message: "더 이상 스쿼드를 추가할 수 없습니다." });
     if (!squad) {
-      squad = await prisma.squad.create({
+      await prisma.squad.create({
         data: {
           account_id: accountId,
           squad_player1: myPlayerId
@@ -118,7 +113,7 @@ router.post("/squad/:myPlayerId/setup", authMiddleware, async (req, res, next) =
       });
       const rolPlayer = await prisma.players.findUnique({ where: { player_id: player.player_id } });
       const message = `${rolPlayer.player_name} 선수를 스쿼드에 등록했습니다`;
-      return res.status(200).json(message);
+      return res.status(200).json({ message, myPlayer_id: myPlayerId });
     }
 
     // Squad 테이블의 빈 컬럼에 데이터 등록
@@ -126,7 +121,7 @@ router.post("/squad/:myPlayerId/setup", authMiddleware, async (req, res, next) =
     if (!squad.squad_player1) updateData = { squad_player1: myPlayerId };
     else if (!squad.squad_player2) updateData = { squad_player2: myPlayerId };
     else if (!squad.squad_player3) updateData = { squad_player3: myPlayerId };
-    else return res.status(400).json({ message: "더이상 스쿼드를 추가할 수 없습니다." });
+    else return res.status(400).json({ message: "더 이상 스쿼드를 추가할 수 없습니다." });
 
     await prisma.squad.update({
       where: { squad_id: squad.squad_id },
@@ -136,7 +131,7 @@ router.post("/squad/:myPlayerId/setup", authMiddleware, async (req, res, next) =
     // 로직 종료
     const rolPlayer = await prisma.players.findUnique({ where: { player_id: player.player_id } });
     const message = `${rolPlayer.player_name} 선수를 스쿼드에 등록했습니다`;
-    return res.status(200).json(message);
+    return res.status(200).json({ message, myPlayer_id: myPlayerId });
   } catch (err) {
     console.log(err);
     next(err);
@@ -149,7 +144,7 @@ router.post("/squad/:myPlayerId/setup", authMiddleware, async (req, res, next) =
 );
 
 // 스쿼드 삭제 API
-router.delete("/squad/:playerId/setdown", authMiddleware, async (req, res, next) => {
+router.delete("/squad/:myPlayer_id/setdown", authMiddleware, async (req, res, next) => {
   try {
     // 데이터 유효성 검사
     if (!req.account) return res.status(401).json({ message: "로그인이 필요합니다." });
@@ -164,19 +159,28 @@ router.delete("/squad/:playerId/setdown", authMiddleware, async (req, res, next)
         squad_player3: true,
       },
     });
-    if (!squad)
-      return res
-        .status(404)
-        .json({ message: "스쿼드가 등록되어 있지 않습니다." });
+    if (!squad) return res.status(404).json({ message: "스쿼드가 등록되어 있지 않습니다." });
 
     // Squad 테이블에서 params 데이터 조회
-    const playerId = +req.params.playerId;
+    const myPlayer_id = +req.params.myPlayer_id;
     let updateData = {};
-    if (squad.squad_player1 === playerId) updateData = { squad_player1: null };
-    else if (squad.squad_player2 === playerId) updateData = { squad_player2: null };
-    else if (squad.squad_player3 === playerId) updateData = { squad_player3: null };
+    console.log("myPlayer_id : " + myPlayer_id);
+    console.log("player1 : " + squad.squad_player1);
+    console.log("player2 : " + squad.squad_player2);
+    console.log("player3 : " + squad.squad_player3);
+    if (squad.squad_player1 === myPlayer_id) updateData = { squad_player1: null };
+    else if (squad.squad_player2 === myPlayer_id) updateData = { squad_player2: null };
+    else if (squad.squad_player3 === myPlayer_id) updateData = { squad_player3: null };
     else return res.status(404).json({ message: "해당 선수가 스쿼드에 등록되어 있지 않습니다." });
 
+    const targetPlayer = await prisma.myPlayers.findUnique({
+      where: { myPlayer_id },
+      select: {
+        player_id: true,
+        players: { select: { player_name: true } }
+      }
+    });
+    const targetPlayerName = targetPlayer.players.player_name;
     // 조회 완료 후 데이터 삭제
     await prisma.squad.update({
       where: { account_id: accountId },
@@ -198,8 +202,7 @@ router.delete("/squad/:playerId/setdown", authMiddleware, async (req, res, next)
     }
 
     // 로직 종료
-    const player = await prisma.players.findFirst({ where: { player_id: playerId } });
-    const message = `${player.player_name} 선수를 스쿼드에서 제외했습니다`;
+    const message = `${targetPlayerName} 선수를 스쿼드에서 제외했습니다`;
     return res.status(200).json(message);
   } catch (err) {
     console.log(err);
