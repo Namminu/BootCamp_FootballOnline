@@ -33,32 +33,25 @@ export async function calculateSquadAverageStats(accountId) {
   }
 
   // 3. 각 멤버의 능력치 평균 구하기
-  const playerAverages = [];
+  const playerIds = [
+    squadMembers.squad_player1,
+    squadMembers.squad_player2,
+    squadMembers.squad_player3,
+  ];
 
-  // 선수 1, 2, 3의 평균 능력치 계산
-  for (let i = 1; i <= 3; i++) {
-    const player = await prisma.players.findUnique({
-      where: {
-        player_id: squadMembers[`squad_player${i}`],
-      },
-      select: {
-        player_speed: true,
-        player_finish: true,
-        player_power: true,
-        player_defense: true,
-        player_stamina: true,
-      },
-    });
-
-    const playerAverage =
+  // 선수 능력치 계산 함수
+  const calculatePlayerAverage = (player) => {
+    if (!player) {
+      throw new Error("선수 데이터를 찾을 수 없습니다.");
+    }
+    return (
       (player.player_speed +
         player.player_finish +
         player.player_power +
         player.player_defense +
         player.player_stamina) /
-      5;
-    playerAverages.push(playerAverage);
-  }
+      5
+    );
 
   // 4. 팀 평균 능력치 계산
   const squadAverage =
@@ -119,59 +112,30 @@ export function playGame(
   };
 }
 
-export function calculateMMR(
-  currentRank,
-  opponentRank,
-  currentWon,
-  currentMMR,
-  opponentMMR
-) {
+export function calculateMMR(currentRank, opponentRank, currentWon) {
   let currentMMRChange = 0;
   let opponentMMRChange = 0;
 
   const rankDifference = currentRank - opponentRank; // 랭킹 차이 계산
 
-  // 랭킹 차이에 따른 MMR 변동 계산
-  if (rankDifference === 1) {
-    if (currentWon) {
-      currentMMRChange = 15;
-      opponentMMRChange = -10;
-    } else {
-      currentMMRChange = -10;
-      opponentMMRChange = 15;
-    }
-  } else if (rankDifference === 2) {
-    if (currentWon) {
-      currentMMRChange = 20;
-      opponentMMRChange = -5;
-    } else {
-      currentMMRChange = -5;
-      opponentMMRChange = 20;
-    }
-  } else if (rankDifference === -1) {
-    if (currentWon) {
-      currentMMRChange = 10;
-      opponentMMRChange = -15;
-    } else {
-      currentMMRChange = -15;
-      opponentMMRChange = 10;
-    }
-  } else if (rankDifference === -2) {
-    if (currentWon) {
-      currentMMRChange = 5;
-      opponentMMRChange = -20;
-    } else {
-      currentMMRChange = -20;
-      opponentMMRChange = 5;
-    }
-  } else if (rankDifference === 0) {
-    if (currentWon) {
-      currentMMRChange = 10;
-      opponentMMRChange = -5;
-    } else {
-      currentMMRChange = -5;
-      opponentMMRChange = 10;
-    }
+  // 각 랭킹 차이에 따른 MMR 변동값 정의
+  const mmrChanges = {
+    1: { win: 15, loss: -10 },
+    2: { win: 20, loss: -5 },
+    "-1": { win: 10, loss: -15 },
+    "-2": { win: 5, loss: -20 },
+    0: { win: 10, loss: -5 },
+  };
+
+  // MMR 변동값을 가져오기 (기본값은 0으로 설정)
+  const change = mmrChanges[rankDifference] || { win: 0, loss: 0 };
+
+  if (currentWon) {
+    currentMMRChange = change.win;
+    opponentMMRChange = change.loss;
+  } else {
+    currentMMRChange = change.loss;
+    opponentMMRChange = change.win;
   }
 
   return { currentMMRChange, opponentMMRChange };
