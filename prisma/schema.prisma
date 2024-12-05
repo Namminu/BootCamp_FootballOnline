@@ -18,7 +18,7 @@ model Accounts {
   email        String @unique @map("email")
   password     String @map("password")
   account_name String @unique @map("account_name")
-  money        Int    @map("money")
+  money        Int    @default(10000) @map("money")
   mmr          Int    @map("mmr")
 
   myPlayers MyPlayers[]
@@ -60,14 +60,14 @@ model MyPlayers {
 model Squad {
   squad_id      Int @id @default(autoincrement()) @map("squad_id")
   account_id    Int @unique @map("account_id")
-  squad_player1 Int? @map("squad_player1")
-  squad_player2 Int? @map("squad_player2")
-  squad_player3 Int? @map("squad_player3")
+  squad_player1 Int @map("squad_player1")
+  squad_player2 Int @map("squad_player2")
+  squad_player3 Int @map("squad_player3")
 
   accounts Accounts  @relation(fields: [account_id], references: [account_id], onDelete: Cascade)
-  players1 MyPlayers? @relation("SquadPlayer1", fields: [squad_player1], references: [myPlayer_id], onDelete: Cascade)
-  players2 MyPlayers? @relation("SquadPlayer2", fields: [squad_player2], references: [myPlayer_id], onDelete: Cascade)
-  players3 MyPlayers? @relation("SquadPlayer3", fields: [squad_player3], references: [myPlayer_id], onDelete: Cascade)
+  players1 MyPlayers @relation("SquadPlayer1", fields: [squad_player1], references: [myPlayer_id], onDelete: Cascade)
+  players2 MyPlayers @relation("SquadPlayer2", fields: [squad_player2], references: [myPlayer_id], onDelete: Cascade)
+  players3 MyPlayers @relation("SquadPlayer3", fields: [squad_player3], references: [myPlayer_id], onDelete: Cascade)
 
   @@map("Squad")
 }
