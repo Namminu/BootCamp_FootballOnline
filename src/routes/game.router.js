@@ -69,7 +69,7 @@ router.get("/lobby", authMiddleware, async (req, res, next) => {
   }
 });
 
-// 게임 로비 기능: 인증된 사용자만 접근 가능
+// 게임  기능: 인증된 사용자만 접근 가능
 router.post("/game", authMiddleware, async (req, res, next) => {
   const currentAccountId = req.account.account_id;
   const { opponentAccountId } = req.body;
@@ -115,8 +115,19 @@ router.post("/game", authMiddleware, async (req, res, next) => {
 
     // 4. 각 팀의 평균 능력치 계산
     const currentTeamData = await calculateSquadAverageStats(currentAccountId);
+    if (!currentTeamData) {
+      return res
+        .status(404)
+        .json({ message: "현재 계정의 스쿼드가 없습니다." });
+    }
+
     const opponentTeamData =
       await calculateSquadAverageStats(opponentAccountId);
+    if (!opponentTeamData) {
+      return res
+        .status(404)
+        .json({ message: "상대 계정의 스쿼드가 없습니다." });
+    }
 
     console.log(`현재 팀 평균 능력치: ${currentTeamData.squadAverage}`);
     console.log(`상대 팀 평균 능력치: ${opponentTeamData.squadAverage}`);

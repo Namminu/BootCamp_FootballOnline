@@ -10,8 +10,9 @@ export async function calculateSquadAverageStats(accountId) {
     },
   });
 
+  // 스쿼드가 없으면 null 반환
   if (!account || !account.squad) {
-    throw new Error("스쿼드 정보가 없습니다.");
+    return null;
   }
 
   const squadId = account.squad.squad_id; // 계정의 스쿼드 ID
@@ -93,15 +94,15 @@ export function playGame(
   let currentTeamScore = 0;
   let opponentTeamScore = 0;
 
-  // 각 팀의 평균 능력치를 체크하고, 그 값이 유효한지 확인
-  const currentTeamAverage = currentTeamAverageStat ?? 0; // 직접 계산한 평균 능력치
-  const opponentTeamAverage = opponentTeamAverageStat ?? 0; // 직접 계산한 평균 능력치
+  // 각 팀의 평균 능력치를 체크하고
+  const currentTeamAverage = currentTeamAverageStat; // 직접 계산한 평균 능력치
+  const opponentTeamAverage = opponentTeamAverageStat; // 직접 계산한 평균 능력치
 
   // 15분 동안 진행되는 경기
   for (let minute = 1; minute <= maxMinutes; minute++) {
     // 매 분마다 랜덤 숫자 계산
-    const currentTeamChance = Math.random() * 200; // 0 ~ 200 사이의 값 (현재 팀의 골 확률)
-    const opponentTeamChance = Math.random() * 200; // 0 ~ 200 사이의 값 (상대 팀의 골 확률)
+    const currentTeamChance = Math.random() * 200; //
+    const opponentTeamChance = Math.random() * 200; //
 
     // 현재 팀의 골 확률을 능력치 기반으로 비교
     if (currentTeamChance < currentTeamAverage) {
