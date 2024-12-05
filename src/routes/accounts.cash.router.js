@@ -26,7 +26,7 @@ router.get('/cash' , authMiddleware, async(req , res) => {
   
       return res.status(201).
       json({message: "충전에 성공했습니다",
-            cash: result.money 
+            cash: result_money 
       })
   
   
