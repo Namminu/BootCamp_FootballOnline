@@ -9,10 +9,10 @@ const router = express.Router()
 // 캐시구매
 router.get('/cash/:email' , authMiddleware, async(req , res) => {
     try{
-      const {account_id} = req.account
+      const {account_name} = req.body
       const {email} = req.params
       const result = await prisma.accounts.findUnique({
-        where : {email : email , account_id : account_id,}
+        where : {email : email , account_name : account_name,}
         
       })
       
@@ -23,7 +23,7 @@ router.get('/cash/:email' , authMiddleware, async(req , res) => {
       result.money += 1000
 
       await prisma.accounts.update({
-        where: { email: email , account_id : account_id},
+        where: { email: email , account_name : account_name},
         data: { money : result.money}
       })
       
