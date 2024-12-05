@@ -116,6 +116,9 @@ router.post(
             squad_player1: playerId
           }
         });
+        const rolPlayer = await prisma.players.findUnique({ where: { player_id: playerId } });
+        const message = `${rolPlayer.player_name} 선수를 스쿼드에 등록했습니다`;
+        return res.status(200).json(message);
       }
 
       // Squad 테이블의 빈 컬럼에 데이터 등록

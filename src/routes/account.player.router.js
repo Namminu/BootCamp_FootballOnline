@@ -23,7 +23,8 @@ router.get('/players/getPlayer', authMiddleware, async (req, res, next) => {
         // 보유 선수 데이터 매핑
         const playerList = players.map(player => ({
             "선수 이름": player.players.player_name,
-            "강화 단계": player.enhanced
+            "강화 단계": player.enhanced,
+            player_id: player.myPlayer_id
         }));
 
         return res.status(200).json({ "myPlayers": playerList });
