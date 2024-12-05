@@ -10,8 +10,12 @@ router.get("/ranking", async (req, res, next) => {
     const rankings = await prisma.accounts.findMany({
       where: {
         squad: {
-          // squad 관계 필드가 존재하는지 체크
-          isNot: null
+          // squad_player1, squad_player2, squad_player3 중 하나라도 null이 아닌 경우
+          AND: [
+            { squad_player1: { not: +null } },
+            { squad_player2: { not: +null } },
+            { squad_player3: { not: +null } },
+          ],
         },
       },
       select: {
