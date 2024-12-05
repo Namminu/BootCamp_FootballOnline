@@ -2,7 +2,6 @@ import express from "express";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import { prisma } from "../utils/prisma/index.js";
 import { Prisma } from "@prisma/client";
-import { calculateSquadAverageStats, playGame, calculateMMR } from './gameLogic.router.js';
 
 const router = express.Router();
 
@@ -65,9 +64,13 @@ router.post("/players/draw", authMiddleware, async (req, res, next) => {
         isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
       }
     );
-    if(!newPlayer) return res.status(500).json({ message: "선수 뽑기 오류"});
+    if(newPlayer){
+      const name = randomPlayer.player_name;
+      const { player_id, player_name, ...stats } = randomPlayer;
+      const avg = Math.round(Object.values(stats).reduce((a, b)=>a+b)/Object.values(stats).length);
+      return res.status(200).json({ newPlayer : { name, avg }, message: `남은 잔액 : ${account.money-cost}` });
+    }else return res.status(500).json({ message: "선수 뽑기 오류"});
 
-    return res.status(200).json({ newPlayer, message: `남은 잔액 : ${account.money-cost}` });
   } catch (err) {
     next(err);
   }
