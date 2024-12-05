@@ -52,6 +52,28 @@ export async function calculateSquadAverageStats(accountId) {
         player.player_stamina) /
       5
     );
+  };
+
+  // 병렬로 선수들의 능력치 데이터를 가져오기
+  const players = await Promise.all(
+    playerIds.map((playerId) =>
+      prisma.players.findUnique({
+        where: { player_id: playerId },
+        select: {
+          player_speed: true,
+          player_finish: true,
+          player_power: true,
+          player_defense: true,
+          player_stamina: true,
+        },
+      })
+    )
+  );
+
+  // 각 선수의 평균 능력치 계산
+  const playerAverages = players.map((player) =>
+    calculatePlayerAverage(player)
+  );
 
   // 4. 팀 평균 능력치 계산
   const squadAverage =
