@@ -100,8 +100,8 @@ export function playGame(
   // 15분 동안 진행되는 경기
   for (let minute = 1; minute <= maxMinutes; minute++) {
     // 매 분마다 랜덤 숫자 계산
-    const currentTeamChance = Math.random() * 100; // 0 ~ 100 사이의 값 (현재 팀의 골 확률)
-    const opponentTeamChance = Math.random() * 100; // 0 ~ 100 사이의 값 (상대 팀의 골 확률)
+    const currentTeamChance = Math.random() * 200; // 0 ~ 200 사이의 값 (현재 팀의 골 확률)
+    const opponentTeamChance = Math.random() * 200; // 0 ~ 200 사이의 값 (상대 팀의 골 확률)
 
     // 현재 팀의 골 확률을 능력치 기반으로 비교
     if (currentTeamChance < currentTeamAverage) {
