@@ -5,23 +5,21 @@ export async function calculateSquadAverageStats(accountId) {
   const account = await prisma.accounts.findUnique({
     where: { account_id: accountId },
     select: {
-      account_name: true, // 계정의 이름 추가
-      squad: true, // 계정의 스쿼드
+      account_name: true,
+      squad: true,
     },
   });
 
-  // 스쿼드가 없으면 null 반환
   if (!account || !account.squad) {
-    return null;
+    // 스쿼드가 없으면 404 에러 반환
+    throw new Error("스쿼드가 존재하지 않습니다.");
   }
 
-  const squadId = account.squad.squad_id; // 계정의 스쿼드 ID
+  const squadId = account.squad.squad_id;
 
   // 2. 해당 스쿼드에 속한 모든 멤버들의 능력치 조회
   const squadMembers = await prisma.squad.findUnique({
-    where: {
-      squad_id: squadId,
-    },
+    where: { squad_id: squadId },
     select: {
       squad_player1: true,
       squad_player2: true,
@@ -29,8 +27,14 @@ export async function calculateSquadAverageStats(accountId) {
     },
   });
 
-  if (!squadMembers) {
-    throw new Error("스쿼드 멤버를 찾을 수 없습니다.");
+  // 스쿼드 멤버가 부족하거나 null인 경우
+  if (
+    !squadMembers ||
+    !squadMembers.squad_player1 ||
+    !squadMembers.squad_player2 ||
+    !squadMembers.squad_player3
+  ) {
+    throw new Error("스쿼드가 완전하지 않습니다.");
   }
 
   // 3. 각 멤버의 능력치 평균 구하기
@@ -55,7 +59,6 @@ export async function calculateSquadAverageStats(accountId) {
     );
   };
 
-  // 병렬로 선수들의 능력치 데이터를 가져오기
   const players = await Promise.all(
     playerIds.map((playerId) =>
       prisma.players.findUnique({

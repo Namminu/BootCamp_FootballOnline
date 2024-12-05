@@ -97,7 +97,6 @@ router.post("/game", authMiddleware, async (req, res, next) => {
     const rankings = await prisma.accounts.findMany({
       where: {
         squad: {
-          // squad_player1, squad_player2, squad_player3 중 하나라도 null이 아닌 경우
           AND: [
             { squad_player1: { not: +null } },
             { squad_player2: { not: +null } },
@@ -134,23 +133,21 @@ router.post("/game", authMiddleware, async (req, res, next) => {
     }
 
     // 4. 각 팀의 평균 능력치 계산
-    const currentTeamData = await calculateSquadAverageStats(currentAccountId);
-    if (!currentTeamData) {
-      return res
-        .status(404)
-        .json({ message: "현재 계정의 스쿼드가 없습니다." });
+    let currentTeamData;
+    try {
+      currentTeamData = await calculateSquadAverageStats(currentAccountId);
+    } catch (error) {
+      // 404 에러 반환 (스쿼드가 없거나 멤버가 부족한 경우)
+      return res.status(404).json({ message: "스쿼드가 완전하지 않습니다"  });
     }
 
-    const opponentTeamData =
-      await calculateSquadAverageStats(opponentAccountId);
-    if (!opponentTeamData) {
-      return res
-        .status(404)
-        .json({ message: "상대 계정의 스쿼드가 없습니다." });
+    let opponentTeamData;
+    try {
+      opponentTeamData = await calculateSquadAverageStats(opponentAccountId);
+    } catch (error) {
+      // 404 에러 반환 (상대 스쿼드가 없거나 멤버가 부족한 경우)
+      return res.status(404).json({ message: "스쿼드가 완전하지 않습니다" });
     }
-
-    console.log(`현재 팀 평균 능력치: ${currentTeamData.squadAverage}`);
-    console.log(`상대 팀 평균 능력치: ${opponentTeamData.squadAverage}`);
 
     // 5. 게임 진행
     const gameResultData = playGame(
@@ -165,7 +162,6 @@ router.post("/game", authMiddleware, async (req, res, next) => {
 
     // 6. 트랜잭션 시작
     const transactionResult = await prisma.$transaction(async (prisma) => {
-      // 6-1. MMR 변동 계산
       let currentMMRChange = 0;
       let opponentMMRChange = 0;
 
@@ -211,13 +207,9 @@ router.post("/game", authMiddleware, async (req, res, next) => {
         });
       }
 
-      // 6-2. 게임 결과 기록 등 다른 데이터 변경이 필요한 경우 추가
-
-      // 트랜잭션에서의 성공 시, 모든 변경 사항이 커밋됨
       return { gameResult, currentMMRChange, opponentMMRChange };
     });
 
-    // 7. 게임 결과 반환
     return res.status(200).json({
       message: `게임 결과: ${gameResult}`,
       currentTeamScore,
