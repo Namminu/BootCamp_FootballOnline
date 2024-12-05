@@ -138,7 +138,7 @@ router.post("/game", authMiddleware, async (req, res, next) => {
       currentTeamData = await calculateSquadAverageStats(currentAccountId);
     } catch (error) {
       // 404 에러 반환 (스쿼드가 없거나 멤버가 부족한 경우)
-      return res.status(404).json({ message: "스쿼드가 완전하지 않습니다"  });
+      return res.status(404).json({ message: "나의 스쿼드가 완전하지 않습니다"  });
     }
 
     let opponentTeamData;
@@ -146,7 +146,7 @@ router.post("/game", authMiddleware, async (req, res, next) => {
       opponentTeamData = await calculateSquadAverageStats(opponentAccountId);
     } catch (error) {
       // 404 에러 반환 (상대 스쿼드가 없거나 멤버가 부족한 경우)
-      return res.status(404).json({ message: "스쿼드가 완전하지 않습니다" });
+      return res.status(404).json({ message: "상대의 스쿼드가 완전하지 않습니다" });
     }
 
     // 5. 게임 진행
