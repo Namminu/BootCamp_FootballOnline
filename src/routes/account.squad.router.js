@@ -130,12 +130,21 @@ router.delete('/squad/:playerId/setdown', authMiddleware, async (req, res, next)
     try {
         // 데이터 유효성 검사
         if (!req.account) return res.status(401).json({ message: "로그인이 필요합니다." });
+        const accountId = +req.account.accountId;
 
         // Squad 테이블에서 params 데이터 조회
-        const player = 0;
+        const playerId = +req.params.playerId;
+        const player = await prisma.squad.findUnique({
+            where: { account_id: accountId },
+
+        });
+        if (!player) return res.status(404).json({ message: "스쿼드에 해당 선수가 등록되어 있지 않습니다." });
 
         // 조회 완료 후 데이터 삭제
-
+        await prisma.squad.delete({
+            where: { account_id: accountId },
+            include: {}
+        });
         // 로직 종료
         const message = `${player.player_name} 선수를 스쿼드에서 제외했습니다`;
         return res.status(200).json(message);
@@ -147,6 +156,5 @@ router.delete('/squad/:playerId/setdown', authMiddleware, async (req, res, next)
         });
     }
 });
-
 
 export default router;
