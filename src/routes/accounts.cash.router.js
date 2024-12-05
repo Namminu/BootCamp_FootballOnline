@@ -9,21 +9,18 @@ const router = express.Router()
 // 캐시구매
 router.get('/cash' , authMiddleware, async(req , res) => {
     try{
-      const {account_name , buy_cash} = req.body
-      const result = await prisma.accounts.findUnique({
-        where : {account_name : account_name}
-        
-      })
+      const {buy_cash} = req.body
       
-      if(!result){
-        return res.status(400).json({message:"해당 계정이름을 찾을수 없습니다"})
+      if(+buy_cash < 1){
+        return res.status(400).json({message: "올바른 캐시값을 입력해 주세요"})
       }
-      
-      result.money += +buy_cash
+
+      const {account_name , money } = req.account
+      const result_money = money + buy_cash
 
       await prisma.accounts.update({
         where: {account_name : account_name},
-        data: { money : result.money}
+        data: { money : result_money}
       })
       
   
