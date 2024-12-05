@@ -1,17 +1,19 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
 import authMiddleware from "../middlewares/auth.middleware.js"; // 인증 미들웨어
-import {calculateSquadAverageStats,playGame,calculateMMR,
+import {
+  calculateSquadAverageStats,
+  playGame,
+  calculateMMR,
 } from "./gameLogic.router.js";
 
 const router = express.Router();
 
 // 게임 로비 기능: 인증된 사용자만 접근 가능
-// 게임 로비 기능: 인증된 사용자만 접근 가능
 router.get("/lobby", authMiddleware, async (req, res, next) => {
   try {
     // 인증된 계정의 ID (authMiddleware에서 설정된 req.account)
-    const { account_id: currentAccountId } = req.account; 
+    const { account_id: currentAccountId } = req.account;
     // 1. 스쿼드를 가지고 있는 계정만 조회 (스쿼드가 있는 유저만 랭킹에 포함)
     const rankings = await prisma.accounts.findMany({
       where: {
@@ -31,7 +33,7 @@ router.get("/lobby", authMiddleware, async (req, res, next) => {
     // 2. 데이터가 없으면 "등록된 유저가 없다"는 메시지 반환
     if (rankings.length === 0) {
       return res
-        .status(200)
+        .status(400)
         .json({ message: "현재 게임을 시작할 수 있는 유저가 없습니다." });
     }
     // 3. 각 계정에 랭킹 순서를 부여합니다.
@@ -52,13 +54,8 @@ router.get("/lobby", authMiddleware, async (req, res, next) => {
       // 자기 자신을 제외하고, 랭킹 차이가 ±2 범위 내인 계정만 포함
       return account.account_id !== currentAccountId && rankDifference <= 2;
     });
-    // 6. 매칭된 계정들이 없으면 알림
-    if (matchedAccounts.length === 0) {
-      return res.status(200).json({
-        message: "현재 랭킹 차이가 너무 커서 매칭할 수 있는 유저가 없습니다.",
-      });
-    }
-    // 7. 매칭 가능한 유저들을 반환
+
+    // 6. 매칭 가능한 유저들을 반환
     return res.status(200).json({
       message: "매칭 가능한 계정들",
       data: matchedAccounts,
@@ -68,19 +65,10 @@ router.get("/lobby", authMiddleware, async (req, res, next) => {
   }
 });
 
-
 //게임 기능
-router.post("/game/:account_id", authMiddleware, async (req, res, next) => {
+router.post("/game", authMiddleware, async (req, res, next) => {
   try {
-    const { account_id } = req.params; // URL 파라미터에서 account_id를 추출
     const currentAccountId = req.account.account_id; // 인증된 계정 ID
-
-    // 1. 인증된 계정 ID와 URL 파라미터로 받은 account_id가 일치하는지 확인
-    if (currentAccountId !== parseInt(account_id)) {
-      return res
-        .status(403)
-        .json({ message: "인증된 사용자만 이 게임에 참여할 수 있습니다." });
-    }
 
     const { opponentAccountId } = req.body; // 상대 계정 ID
 
@@ -91,14 +79,14 @@ router.post("/game/:account_id", authMiddleware, async (req, res, next) => {
         .json({ message: "상대 계정 ID가 제공되지 않았습니다." });
     }
 
-    // 2. 자기 자신과 게임을 진행할 수 없도록 검사
+    // 1. 자기 자신과 게임을 진행할 수 없도록 검사
     if (currentAccountId === opponentAccountId) {
       return res
         .status(400)
         .json({ message: "자기 자신과는 게임을 진행할 수 없습니다." });
     }
 
-    // 3. 모든 계정의 랭킹을 계산 (MMR 기준으로)
+    // 2. 모든 계정의 랭킹을 계산 (MMR 기준으로)
     const rankings = await prisma.accounts.findMany({
       where: {
         squad: { isNot: null }, // 스쿼드가 있는 계정만 조회
@@ -113,34 +101,34 @@ router.post("/game/:account_id", authMiddleware, async (req, res, next) => {
       },
     });
 
-    // 4. 데이터가 없으면 "등록된 유저가 없다"는 메시지 반환
+    // 3. 데이터가 없으면 "등록된 유저가 없다"는 메시지 반환
     if (rankings.length === 0) {
       return res
-        .status(200)
+        .status(400)
         .json({ message: "현재 게임을 시작할 수 있는 유저가 없습니다." });
     }
 
-    // 5. 현재 계정의 랭킹 계산
+    // 4. 현재 계정의 랭킹 계산
     const currentRank =
       rankings.findIndex((account) => account.account_id === currentAccountId) +
       1;
 
-    // 6. 상대 계정의 랭킹 계산
+    // 5. 상대 계정의 랭킹 계산
     const opponentRank =
       rankings.findIndex(
         (account) => account.account_id === opponentAccountId
       ) + 1;
 
-    // 7. 랭킹 차이가 +-2 범위 내인지 확인
+    // 6. 랭킹 차이가 +-2 범위 내인지 확인
     const rankDifference = Math.abs(currentRank - opponentRank);
 
     if (rankDifference > 2) {
-      return res.status(200).json({
-        message: "현재 랭킹 차이가 너무 커서 매칭할 수 있는 유저가 없습니다.",
+      return res.status(400).json({
+        message: "현재 랭킹 차이가 너무 커서 매칭할 수 있는 유저가 아닙니다.",
       });
     }
 
-    // 8. 각 팀의 평균 능력치 계산
+    // 7. 각 팀의 평균 능력치 계산
     const currentTeamData = await calculateSquadAverageStats(currentAccountId);
     const opponentTeamData =
       await calculateSquadAverageStats(opponentAccountId);
@@ -148,7 +136,7 @@ router.post("/game/:account_id", authMiddleware, async (req, res, next) => {
     console.log(`현재 팀 평균 능력치: ${currentTeamData.squadAverage}`);
     console.log(`상대 팀 평균 능력치: ${opponentTeamData.squadAverage}`);
 
-    // 9. 게임을 진행하여 승패 결정
+    // 8. 게임을 진행하여 승패 결정
     const gameResultData = playGame(
       currentTeamData.squadAverage,
       opponentTeamData.squadAverage,
@@ -156,11 +144,11 @@ router.post("/game/:account_id", authMiddleware, async (req, res, next) => {
       opponentTeamData.accountName
     );
 
-    // 10. 게임 결과 (승리, 패배, 무승부) 처리
+    // 9. 게임 결과 (승리, 패배, 무승부) 처리
     const { gameResult, currentTeamScore, opponentTeamScore, goals } =
       gameResultData;
 
-    // 11. MMR 변동 계산 (게임 결과에 따른 MMR 변동)
+    // 10. MMR 변동 계산 (게임 결과에 따른 MMR 변동)
     const currentAccount = await prisma.accounts.findUnique({
       where: { account_id: currentAccountId },
     });
@@ -176,7 +164,7 @@ router.post("/game/:account_id", authMiddleware, async (req, res, next) => {
       opponentAccount.mmr
     );
 
-    // 12. MMR 업데이트
+    // 11. MMR 업데이트
     const updatedCurrentAccount = await prisma.accounts.update({
       where: { account_id: currentAccountId },
       data: { mmr: currentAccount.mmr + currentMMRChange },
@@ -187,7 +175,7 @@ router.post("/game/:account_id", authMiddleware, async (req, res, next) => {
       data: { mmr: opponentAccount.mmr + opponentMMRChange },
     });
 
-    // 13. 게임 결과 반환
+    // 12. 게임 결과 반환
     return res.status(200).json({
       message: `게임 결과: ${gameResult}`,
       currentMMR: updatedCurrentAccount.mmr,
