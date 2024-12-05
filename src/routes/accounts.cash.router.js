@@ -7,23 +7,22 @@ const router = express.Router()
 
 
 // 캐시구매
-router.get('/cash/:email' , authMiddleware, async(req , res) => {
+router.get('/cash' , authMiddleware, async(req , res) => {
     try{
-      const {account_name} = req.body
-      const {email} = req.params
+      const {account_name , buy_cash} = req.body
       const result = await prisma.accounts.findUnique({
-        where : {email : email , account_name : account_name,}
+        where : {account_name : account_name}
         
       })
       
       if(!result){
-        return res.status(400).json({message:"해당 이메일과 계정 정보가 일치하지 않습니다"})
+        return res.status(400).json({message:"해당 계정이름을 찾을수 없습니다"})
       }
       
-      result.money += 1000
+      result.money += +buy_cash
 
       await prisma.accounts.update({
-        where: { email: email , account_name : account_name},
+        where: {account_name : account_name},
         data: { money : result.money}
       })
       
@@ -36,7 +35,7 @@ router.get('/cash/:email' , authMiddleware, async(req , res) => {
   
     }
     catch(error){
-      return res.status(500).json({message : "캐시구메 에러가 발생했습니다"})
+      return res.status(500).json({message : "캐시구매 에러가 발생했습니다"})
     }
   })
 
