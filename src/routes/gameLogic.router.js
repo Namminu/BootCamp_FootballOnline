@@ -134,6 +134,7 @@ export function playGame(
   };
 }
 
+//mmr 변동함수
 export function calculateMMR(currentRank, opponentRank, currentWon) {
   let currentMMRChange = 0;
   let opponentMMRChange = 0;
@@ -146,19 +147,31 @@ export function calculateMMR(currentRank, opponentRank, currentWon) {
     2: { win: 20, loss: -5 },
     "-1": { win: 10, loss: -15 },
     "-2": { win: 5, loss: -20 },
-    0: { win: 10, loss: -5 },
+    0: { win: 10, loss: -5 }, // 동일 랭크일 경우
   };
 
   // MMR 변동값을 가져오기 (기본값은 0으로 설정)
   const change = mmrChanges[rankDifference] || { win: 0, loss: 0 };
 
   if (currentWon) {
-    currentMMRChange = change.win;
-    opponentMMRChange = change.loss;
-  } else {
-    currentMMRChange = change.loss;
-    opponentMMRChange = change.win;
+    // 현재 팀이 승리했을 때
+    currentMMRChange = change.win; // 승리 팀은 win 값 만큼 MMR 증가
+    opponentMMRChange = change.loss; // 패배 팀은 loss 값 만큼 MMR 감소
+  } else if (currentWon === false) {
+    // 현재 팀이 패배했을 때
+    currentMMRChange = change.loss; // 패배 팀은 loss 값 만큼 MMR 감소
+    opponentMMRChange = change.win; // 승리 팀은 win 값 만큼 MMR 증가
   }
+
+  // 무승부 시 MMR 변동 없음
+  if (currentWon === null) {
+    currentMMRChange = 0;
+    opponentMMRChange = 0;
+  }
+
+  // MMR 변동이 음수일 경우 0 이하로 내려가지 않도록 제한
+  currentMMRChange = Math.max(currentMMRChange, 0);
+  opponentMMRChange = Math.max(opponentMMRChange, 0);
 
   return { currentMMRChange, opponentMMRChange };
 }

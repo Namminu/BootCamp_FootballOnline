@@ -159,9 +159,7 @@ router.post("/game", authMiddleware, async (req, res, next) => {
     const { currentMMRChange, opponentMMRChange } = calculateMMR(
       currentRank,
       opponentRank,
-      gameResult === "승리",
-      currentAccount.mmr,
-      opponentAccount.mmr
+      gameResult === "승리" // 현재 팀이 승리한 경우
     );
 
     // 11. MMR 업데이트
@@ -183,6 +181,9 @@ router.post("/game", authMiddleware, async (req, res, next) => {
       currentTeamScore,
       opponentTeamScore,
       goals,
+      rankDifference, // 랭킹 차이 추가
+      currentMMRChange, // 현재 팀의 MMR 변화량
+      opponentMMRChange, // 상대 팀의 MMR 변화량
     });
   } catch (error) {
     console.error("Error during game processing:", error);
