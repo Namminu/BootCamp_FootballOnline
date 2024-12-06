@@ -10,6 +10,10 @@ export async function calculateSquadAverageStats(accountId) {
     },
   });
 
+  if (!account.squad) {
+    throw new Error("이 계정은 스쿼드에 속해 있지 않습니다.");
+  }
+
   const squadId = account.squad.squad_id;
 
   // 2. 해당 스쿼드에 속한 모든 멤버들의 myPlayer_id 조회
@@ -48,9 +52,9 @@ export async function calculateSquadAverageStats(accountId) {
   const players = await Promise.all(
     myPlayerIds.map((myPlayerId) =>
       prisma.myPlayers.findUnique({
-        where: { myPlayer_id: myPlayerId }, // MyPlayer의 myPlayer_id를 이용하여
+        where: { myPlayer_id: myPlayerId },
         select: {
-          player: {
+          players: {
             // MyPlayers에서 참조하는 Players 정보를 가져오기
             select: {
               player_speed: true,
@@ -67,7 +71,7 @@ export async function calculateSquadAverageStats(accountId) {
 
   // 각 선수의 평균 능력치 계산
   const playerAverages = players.map((myPlayer) =>
-    calculatePlayerAverage(myPlayer.player)
+    calculatePlayerAverage(myPlayer.players)
   );
 
   // 5. 팀 평균 능력치 계산
