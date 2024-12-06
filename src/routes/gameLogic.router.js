@@ -10,20 +10,24 @@ export async function calculateSquadAverageStats(accountId) {
     },
   });
 
+  if (!account.squad) {
+    throw new Error("이 계정은 스쿼드에 속해 있지 않습니다.");
+  }
+
   const squadId = account.squad.squad_id;
 
-  // 2. 해당 스쿼드에 속한 모든 멤버들의 능력치 조회
+  // 2. 해당 스쿼드에 속한 모든 멤버들의 myPlayer_id 조회
   const squadMembers = await prisma.squad.findUnique({
     where: { squad_id: squadId },
     select: {
-      squad_player1: true,
-      squad_player2: true,
-      squad_player3: true,
+      squad_player1: true, // MyPlayers의 myPlayer_id 참조
+      squad_player2: true, // MyPlayers의 myPlayer_id 참조
+      squad_player3: true, // MyPlayers의 myPlayer_id 참조
     },
   });
 
-  // 3. 각 멤버의 능력치 평균 구하기
-  const playerIds = [
+  // 3. 각 멤버의 player_id를 MyPlayers 모델에서 조회하여 능력치 평균 계산
+  const myPlayerIds = [
     squadMembers.squad_player1,
     squadMembers.squad_player2,
     squadMembers.squad_player3,
@@ -44,27 +48,33 @@ export async function calculateSquadAverageStats(accountId) {
     );
   };
 
+  // 4. MyPlayers를 통해 player_id를 가지고 선수 능력치를 계산
   const players = await Promise.all(
-    playerIds.map((playerId) =>
-      prisma.players.findUnique({
-        where: { player_id: playerId },
+    myPlayerIds.map((myPlayerId) =>
+      prisma.myPlayers.findUnique({
+        where: { myPlayer_id: myPlayerId },
         select: {
-          player_speed: true,
-          player_finish: true,
-          player_power: true,
-          player_defense: true,
-          player_stamina: true,
+          players: {
+            // MyPlayers에서 참조하는 Players 정보를 가져오기
+            select: {
+              player_speed: true,
+              player_finish: true,
+              player_power: true,
+              player_defense: true,
+              player_stamina: true,
+            },
+          },
         },
       })
     )
   );
 
   // 각 선수의 평균 능력치 계산
-  const playerAverages = players.map((player) =>
-    calculatePlayerAverage(player)
+  const playerAverages = players.map((myPlayer) =>
+    calculatePlayerAverage(myPlayer.players)
   );
 
-  // 4. 팀 평균 능력치 계산
+  // 5. 팀 평균 능력치 계산
   const squadAverage =
     playerAverages.reduce((sum, avg) => sum + avg, 0) / playerAverages.length;
 
