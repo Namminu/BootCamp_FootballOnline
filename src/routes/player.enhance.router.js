@@ -11,6 +11,12 @@ router.patch("/players/enhance", authMiddleware, async (req, res, next) => {
     const account = req.account;
     const { targetPlayer_id, meterial_id } = req.body;
 
+    // body 검사
+    if(typeof((Number)(targetPlayer_id))!==Number)
+      return res.status(400).json({ Message: "강화선수 id가 정수가 아닙니다." });
+    if(typeof((Number)(meterial_id))!==Number)
+      return res.status(400).json({ Message: "재료선수 id가 정수가 아닙니다." }); 
+
     // 강화 선수 보유 여부 확인 (JWT 인증)
     let targetPlayer = await prisma.myPlayers.findFirst({
       where: {
@@ -40,7 +46,7 @@ router.patch("/players/enhance", authMiddleware, async (req, res, next) => {
 
     // 강화 비용 보유 여부 검사
     if (account.money < cost) {
-      return res.status(400).json({ Message: `보유 캐쉬가 부족합니다.`, '필요 캐쉬:':cost, "보유 캐쉬":account.money });
+      return res.status(400).json({ Message: `보유 금액이 부족합니다.`, '필요 금액:':cost, "보유 금액":account.money });
     }
 
     // 강화 선수 최대 강화인지 확인
@@ -83,9 +89,9 @@ router.patch("/players/enhance", authMiddleware, async (req, res, next) => {
               myPlayer_id: +targetPlayer_id,
             }
           })
-          return "강화성공";
+          return "강화성공!";
         }else
-          return "강화실패";
+          return "강화실패...";
       },
       {
         isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
@@ -93,7 +99,15 @@ router.patch("/players/enhance", authMiddleware, async (req, res, next) => {
     );
     if(!result) throw new Error('선수 강화 트랜잭션 오류');
 
-    return res.status(200).json({ result, enhancedPlayer, '남은 잔액':`${account.money - cost}` });
+    const enhancePlayerPrototype = await prisma.players.findFirst({
+      where: { player_id : enhancedPlayer.player_id }
+    })
+    const { player_id, player_name, ...stats } = enhancePlayerPrototype;
+    const avg = Math.round(Object.values(stats).reduce((a, b)=>a+b)/Object.values(stats).length)+enhancedPlayer.enhanced;
+
+    const data = { id : enhancedPlayer.myPlayer_id ,name : `+${enhancedPlayer.enhanced} ${player_name}` , avg }
+
+    return res.status(200).json({ result, data, '남은 잔액':`${account.money - cost}` });
   } catch (err) {
     next(err);
   }

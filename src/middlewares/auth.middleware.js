@@ -10,7 +10,11 @@ export default async function (req, res, next) {
     }
 
     // "Bearer <token>" 형식에서 토큰만 추출
-    const token = authorization.split(" ")[1];
+    const [ type, token ] = authorization.split(" ");
+
+    // JWT 토큰 검증
+    if(type!==("Bearer"))
+        throw new Error("Bearer 토큰 타입이 아닙니다."); 
 
     // JWT 토큰 검증
     const decodedToken = jwt.verify(token, process.env.JWT_KEY);
