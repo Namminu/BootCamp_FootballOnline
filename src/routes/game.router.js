@@ -86,9 +86,10 @@ router.get("/lobby", authMiddleware, async (req, res, next) => {
       });
     }
 
-    // 8. 매칭 가능한 유저들을 반환
+    // 8. 나의 랭킹을 포함하여 응답 구성
     return res.status(200).json({
       message: "매칭 가능한 계정들",
+      나의랭킹: currentRank, // 나의 랭킹을 "나의랭킹"으로 추가
       data: matchedAccounts,
     });
   } catch (error) {
