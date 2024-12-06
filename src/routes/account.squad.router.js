@@ -190,10 +190,6 @@ router.delete("/squad/:myPlayer_id/setdown", authMiddleware, async (req, res, ne
     // Squad 테이블에서 params 데이터 조회
     const myPlayer_id = +req.params.myPlayer_id;
     let updateData = {};
-    console.log("myPlayer_id : " + myPlayer_id);
-    console.log("player1 : " + squad.squad_player1);
-    console.log("player2 : " + squad.squad_player2);
-    console.log("player3 : " + squad.squad_player3);
     if (squad.squad_player1 === myPlayer_id) updateData = { squad_player1: null };
     else if (squad.squad_player2 === myPlayer_id) updateData = { squad_player2: null };
     else if (squad.squad_player3 === myPlayer_id) updateData = { squad_player3: null };
