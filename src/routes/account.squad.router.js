@@ -102,8 +102,34 @@ router.post("/squad/:myPlayerId/setup", authMiddleware, async (req, res, next) =
     });
     if (!player) return res.status(404).json({ message: "현재 해당 선수를 보유하고 있지 않습니다." });
 
-    const squad = await prisma.squad.findUnique({ where: { account_id: accountId } });
-    if (squad && squad.length >= 3) return res.status(400).json({ message: "더 이상 스쿼드를 추가할 수 없습니다." });
+    // 스쿼드에 남는 자리가 있는지 검사
+    const squad = await prisma.squad.findUnique({
+      where: { account_id: accountId },
+      include: {
+        players1: { include: { players: true } },
+        players2: { include: { players: true } },
+        players3: { include: { players: true } },
+      }
+    });
+    if (squad) {
+      const alreadySquad = [squad.squad_player1, squad.squad_player2, squad.squad_player3].filter(Boolean);
+      if (alreadySquad.length >= 3) return res.status(400).json({ message: "더 이상 스쿼드를 추가할 수 없습니다." });
+    }
+
+    // 스쿼드에 해당 선수가 이미 등록되어 있는지 검사
+    const alreadyPlayer = await prisma.squad.findFirst({
+      where: {
+        account_id: accountId,
+        OR: [
+          { squad_player1: myPlayerId },
+          { squad_player2: myPlayerId },
+          { squad_player3: myPlayerId },
+        ]
+      }
+    });
+    if (alreadyPlayer) return res.status(400).json({ message: "해당 선수는 이미 등록되어 있습니다." });
+
+    // Squad 테이블에 본인 계정 데이터가 없을 경우 새로 추가
     if (!squad) {
       await prisma.squad.create({
         data: {
