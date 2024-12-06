@@ -43,15 +43,9 @@ https://www.notion.so/teamsparta/13f2dc3ef51481d0aafee3add8e524b6?v=13f2dc3ef514
   - 강화 확률 = 100 - 10 * 2 = **80%**
 
 
-# 게임 시스템 및 MMR 변화 (Game System & MMR Changes)
-
-이 문서는 게임의 **기본 로직**과 **MMR 변화** 시스템, **게임 결과**에 대한 설명을 제공합니다. 게임의 승패와 그에 따른 **MMR 변화**는 게임의 중요한 부분이며, 이는 **기준 팀(내 팀)**을 기준으로 상대 팀과의 **등수 차이**에 따라 결정됩니다.
-
----
-
 ##  게임 로직 (Game Logic)
 
-### 1. 게임 진행 과정 (Game Flow)
+###  게임 진행 과정 (Game Flow)
 
 게임은 다음과 같은 흐름으로 진행됩니다:
 
@@ -80,7 +74,7 @@ https://www.notion.so/teamsparta/13f2dc3ef51481d0aafee3add8e524b6?v=13f2dc3ef514
 
 ---
 
-### 2. MMR 변화 규칙
+###  MMR 변화 규칙
 
 게임이 끝난 후, 승리한 팀과 패배한 팀의 **랭크 차이**에 따라 **MMR 변화**가 계산됩니다. 각 팀의 **MMR 변화**는 **기준 팀(내 팀)**을 기준으로 계산됩니다.
 
@@ -90,7 +84,7 @@ https://www.notion.so/teamsparta/13f2dc3ef51481d0aafee3add8e524b6?v=13f2dc3ef514
 
 ---
 
-### 1.3. 랭크 차이에 따른 MMR 변화
+###  랭크 차이에 따른 MMR 변화
 
 내 팀과 상대 팀 간의 **랭크 차이**에 따라 MMR 변화가 달라집니다. 각 랭크 차이에 따른 승리와 패배 시 MMR 변화는 다음과 같습니다.
 
@@ -116,17 +110,17 @@ https://www.notion.so/teamsparta/13f2dc3ef51481d0aafee3add8e524b6?v=13f2dc3ef514
 
 ---
 
-## 3. 게임 결과 및 MMR 변화
+##  게임 결과 및 MMR 변화
 
 게임이 종료되면, **게임 결과**와 **MMR 변화**가 출력됩니다. 게임의 **결과 메시지**와 **MMR 변화**는 다음과 같은 형태로 제공됩니다.
 
-#### 2.1. 게임 결과 설명
+####  게임 결과 설명
 
 - **"message"**: 게임 결과 메시지입니다. 예를 들어 "게임 결과: 승리", "게임 결과: 패배"와 같은 정보가 표시됩니다.
 - **"gameDetails"**: 최종 결과를 보여줍니다. 예시: `tess10test 7 : 6 appleuser`처럼 각 팀의 득점을 나타냅니다.
 - **"goals"**: 골이 발생한 시점과 골을 넣은 팀을 나열합니다. 이를 통해 게임 중 발생한 주요 사건을 확인할 수 있습니다.
 
-#### 2.2. MMR 변화 (MMR Changes)
+####  MMR 변화 (MMR Changes)
 
 - **"mmrChanges"**: 게임 후, 내 팀과 상대 팀의 **MMR 변화**를 보여줍니다.
   - **"currentAccountMMRChange"**: 내 팀의 MMR 변화 값. 승리 시 양수, 패배 시 음수입니다.
@@ -136,7 +130,7 @@ https://www.notion.so/teamsparta/13f2dc3ef51481d0aafee3add8e524b6?v=13f2dc3ef514
 
 ---
 
-## 4. 게임 결과 예시
+##  게임 결과 예시
 
 ```json
 {
