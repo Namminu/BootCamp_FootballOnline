@@ -11,8 +11,6 @@ router.patch("/players/enhance", authMiddleware, async (req, res, next) => {
     const account = req.account;
     const { targetPlayer_id, meterial_id } = req.body;
 
-    console.log(typeof(+targetPlayer_id));
-    console.log(Number);
     // body 검사
     if(typeof(+targetPlayer_id)!=='number')
       return res.status(400).json({ Message: "강화선수 id가 정수가 아닙니다." });
