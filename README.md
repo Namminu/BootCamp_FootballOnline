@@ -14,8 +14,6 @@ https://www.notion.so/teamsparta/13f2dc3ef51481d0aafee3add8e524b6?v=13f2dc3ef514
 
 강화 비용 = 1000 * Math.pow(2, targetPlayer.enhanced)
 
-markdown
-코드 복사
 
 - `targetPlayer.enhanced`는 현재 선수의 강화 단계입니다.
 - `Math.pow(2, targetPlayer.enhanced)`는 2의 `targetPlayer.enhanced` 제곱을 계산합니다.
@@ -33,9 +31,6 @@ markdown
 
 강화 확률 = 100 - 10 * targetPlayer.enhanced
 
-markdown
-코드 복사
-
 - `targetPlayer.enhanced`는 현재 선수의 강화 단계입니다.
 - 강화 단계가 올라갈수록 강화 확률이 감소합니다.
 
@@ -46,19 +41,6 @@ markdown
   - 강화 확률 = 100 - 10 * 1 = **90%**
 - **강화 단계 2**에서 강화할 경우:
   - 강화 확률 = 100 - 10 * 2 = **80%**
-
-### 요약
-- 강화 비용은 강화 단계가 올라갈수록 기하급수적으로 증가합니다.
-- 강화 확률은 강화 단계가 올라갈수록 감소합니다.
-
-
-
-
-
-
-
-
-
 
 
 # 게임 시스템 및 MMR 변화 (Game System & MMR Changes)
