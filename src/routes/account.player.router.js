@@ -12,7 +12,8 @@ router.get('/players/getPlayer', authMiddleware, async (req, res, next) => {
         // MyPlayers 테이블과 Players 테이블 Join 데이터 할당
         const players = await prisma.myPlayers.findMany({
             where: { account_id: accountId },
-            include: { players: true }
+            include: { players: true },
+            orderBy: { player_id: 'asc' }
         });
         // 보유한 선수가 없을 경우
         if (!players || players.length === 0) {
