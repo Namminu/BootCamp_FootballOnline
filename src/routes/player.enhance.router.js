@@ -12,9 +12,9 @@ router.patch("/players/enhance", authMiddleware, async (req, res, next) => {
     const { targetPlayer_id, meterial_id } = req.body;
 
     // body 검사
-    if(typeof((Number)(targetPlayer_id))!==Number)
+    if(typeof(+targetPlayer_id)!=='number')
       return res.status(400).json({ Message: "강화선수 id가 정수가 아닙니다." });
-    if(typeof((Number)(meterial_id))!==Number)
+    if(typeof(+meterial_id)!=='number')
       return res.status(400).json({ Message: "재료선수 id가 정수가 아닙니다." }); 
 
     // 강화 선수 보유 여부 확인 (JWT 인증)
@@ -84,7 +84,8 @@ router.patch("/players/enhance", authMiddleware, async (req, res, next) => {
         // 강화성공시 강화단계 상승
         if(randomNum<enhanceRate){
           enhancedPlayer = await tx.myPlayers.update({
-            data: { enhanced: targetPlayer.enhanced+1 },
+            data: { 
+              enhanced: targetPlayer.enhanced+1 },
             where: {
               myPlayer_id: +targetPlayer_id,
             }
@@ -97,7 +98,6 @@ router.patch("/players/enhance", authMiddleware, async (req, res, next) => {
         isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
       }
     );
-    if(!result) throw new Error('선수 강화 트랜잭션 오류');
 
     const enhancePlayerPrototype = await prisma.players.findFirst({
       where: { player_id : enhancedPlayer.player_id }
