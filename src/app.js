@@ -11,6 +11,7 @@ import RankingRouter from "./routes/ranking.router.js";
 import dotenv from "dotenv";
 import errorHandlerMiddleware from "./middlewares/error-handler.middleware.js";
 import cashrouter from "./routes/accounts.cash.router.js"
+import AdminRouter from "./routes/admin.router.js";
 
 const app = express();
 const PORT = 3018;
@@ -19,6 +20,7 @@ dotenv.config();
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(express.static("index"));
 app.use("/api", [
   AccountsRouter,
   AccountPlayerRouter,
@@ -30,6 +32,7 @@ app.use("/api", [
   PlayerDrawRouter,
   PlayerEnhanceRouter,
   RankingRouter,
+  AdminRouter,
 ]);
 app.use(errorHandlerMiddleware);
 
