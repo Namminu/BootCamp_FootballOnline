@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin</title>
+</head>
+<body>
+  <h1>Admin Page</h1>
+  <p id="message"></p>
+
+  <div id="admin">
+    <h2>Item Management</h2>
+    <button id="fetchItems">Fetch Items</button>
+    <table id="itemsTable">
+      <thead>
+        <tr>
+          <td>ID</td>
+          <th>Name</th>
+          <td>Speed</td>
+          <td>Finish</td>
+          <td>Power</td>
+          <td>Defense</td>
+          <td>Stamina</td>
+          <th>Average</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  
+    <h2>User Management</h2>
+    <input type="text" id="userId" placeholder="Enter User ID" />
+    <button id="fetchUser">Fetch User</button>
+    <div id="userInfo"></div>
+  </div>
+  <script src="admin.js"></script>
+</body>
+</html>
