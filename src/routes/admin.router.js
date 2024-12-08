@@ -35,7 +35,7 @@ router.get("/admin", (req, res, next) => {
         return res.status(403).json({ message: "Token required" });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(token, process.env.JWT_KEY, (err, user) => {
         if (err) {
             return res.status(403).json({ message: "Invalid or expired token" });
         }
@@ -43,7 +43,7 @@ router.get("/admin", (req, res, next) => {
         if (activeTokens[user.username] !== token) {
             return res.status(403).json({ message: "Token is invalid (logged out elsewhere)" });
         }
-        next();
+        return res.json({ message: `Welcome to the admin page, ${user.username}!` });
     });
 });
 

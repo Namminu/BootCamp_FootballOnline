@@ -27,6 +27,28 @@ router.get('/players', async (req, res, next) => {
     return res.status(200).json({ players: converted });
 });
 
+// 선수 상세 정보 전체 조회
+router.get('/playersAll', async (req, res, next) => {
+    const players = await prisma.players.findMany({
+        select: {
+            player_id: true,
+            player_name: true,
+            player_speed: true,
+            player_finish: true,
+            player_power: true,
+            player_defense: true,
+            player_stamina: true,
+        }
+    })
+
+    players.map(player => {
+        const average = (player.player_speed + player.player_finish + player.player_power + player.player_defense + player.player_stamina) / 5;
+        player["player_average"] = average;
+    });
+
+    return res.status(200).json(players);
+});
+
 // 선수 상세 조회
 router.get('/players/:playerId', async (req, res, next) => {
     const { playerId } = req.params;
