@@ -31,8 +31,8 @@ router.get('/cash' , authMiddleware, async(req , res) => {
   
   
     }
-    catch(error){
-      return res.status(500).json({message : "캐시구매 에러가 발생했습니다"})
+    catch(err){
+      next(err)
     }
   })
 
