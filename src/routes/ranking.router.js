@@ -6,12 +6,16 @@ const router = express.Router();
 // 전체 랭킹 보기 API
 router.get("/ranking", async (req, res, next) => {
   try {
-    // 1. 스쿼드를 가지고 있는 계정만 조회
+    // 1. 상위 100명만 조회 (limit 100 고정)
     const rankings = await prisma.accounts.findMany({
       where: {
         squad: {
-          // squad 관계 필드가 존재하는지 체크
-          isNot: null
+          // squad_player1, squad_player2, squad_player3 중 하나라도 null이 아닌 경우
+          AND: [
+            { squad_player1: { not: null } },
+            { squad_player2: { not: null } },
+            { squad_player3: { not: null } },
+          ],
         },
       },
       select: {
@@ -22,6 +26,7 @@ router.get("/ranking", async (req, res, next) => {
       orderBy: {
         mmr: "desc", // MMR 내림차순 정렬
       },
+      take: 100, // 상위 100명만 조회
     });
 
     // 2. 데이터가 없으면 빈 배열을 반환하거나 적절한 메시지 반환

@@ -5,35 +5,29 @@ export async function calculateSquadAverageStats(accountId) {
   const account = await prisma.accounts.findUnique({
     where: { account_id: accountId },
     select: {
-      account_name: true, // 계정의 이름 추가
-      squad: true, // 계정의 스쿼드
+      account_name: true,
+      squad: true,
     },
   });
 
-  if (!account || !account.squad) {
-    throw new Error("스쿼드 정보가 없습니다.");
+  if (!account.squad) {
+    throw new Error("이 계정은 스쿼드에 속해 있지 않습니다.");
   }
 
-  const squadId = account.squad.squad_id; // 계정의 스쿼드 ID
+  const squadId = account.squad.squad_id;
 
-  // 2. 해당 스쿼드에 속한 모든 멤버들의 능력치 조회
+  // 2. 해당 스쿼드에 속한 모든 멤버들의 myPlayer_id 조회
   const squadMembers = await prisma.squad.findUnique({
-    where: {
-      squad_id: squadId,
-    },
+    where: { squad_id: squadId },
     select: {
-      squad_player1: true,
-      squad_player2: true,
-      squad_player3: true,
+      squad_player1: true, // MyPlayers의 myPlayer_id 참조
+      squad_player2: true, // MyPlayers의 myPlayer_id 참조
+      squad_player3: true, // MyPlayers의 myPlayer_id 참조
     },
   });
 
-  if (!squadMembers) {
-    throw new Error("스쿼드 멤버를 찾을 수 없습니다.");
-  }
-
-  // 3. 각 멤버의 능력치 평균 구하기
-  const playerIds = [
+  // 3. 각 멤버의 player_id를 MyPlayers 모델에서 조회하여 능력치 평균 계산
+  const myPlayerIds = [
     squadMembers.squad_player1,
     squadMembers.squad_player2,
     squadMembers.squad_player3,
@@ -54,28 +48,33 @@ export async function calculateSquadAverageStats(accountId) {
     );
   };
 
-  // 병렬로 선수들의 능력치 데이터를 가져오기
+  // 4. MyPlayers를 통해 player_id를 가지고 선수 능력치를 계산
   const players = await Promise.all(
-    playerIds.map((playerId) =>
-      prisma.players.findUnique({
-        where: { player_id: playerId },
+    myPlayerIds.map((myPlayerId) =>
+      prisma.myPlayers.findUnique({
+        where: { myPlayer_id: myPlayerId },
         select: {
-          player_speed: true,
-          player_finish: true,
-          player_power: true,
-          player_defense: true,
-          player_stamina: true,
+          players: {
+            // MyPlayers에서 참조하는 Players 정보를 가져오기
+            select: {
+              player_speed: true,
+              player_finish: true,
+              player_power: true,
+              player_defense: true,
+              player_stamina: true,
+            },
+          },
         },
       })
     )
   );
 
   // 각 선수의 평균 능력치 계산
-  const playerAverages = players.map((player) =>
-    calculatePlayerAverage(player)
+  const playerAverages = players.map((myPlayer) =>
+    calculatePlayerAverage(myPlayer.players)
   );
 
-  // 4. 팀 평균 능력치 계산
+  // 5. 팀 평균 능력치 계산
   const squadAverage =
     playerAverages.reduce((sum, avg) => sum + avg, 0) / playerAverages.length;
 
@@ -93,15 +92,15 @@ export function playGame(
   let currentTeamScore = 0;
   let opponentTeamScore = 0;
 
-  // 각 팀의 평균 능력치를 체크하고, 그 값이 유효한지 확인
-  const currentTeamAverage = currentTeamAverageStat ?? 0; // 직접 계산한 평균 능력치
-  const opponentTeamAverage = opponentTeamAverageStat ?? 0; // 직접 계산한 평균 능력치
+  // 각 팀의 평균 능력치를 체크하고
+  const currentTeamAverage = currentTeamAverageStat; // 직접 계산한 평균 능력치
+  const opponentTeamAverage = opponentTeamAverageStat; // 직접 계산한 평균 능력치
 
   // 15분 동안 진행되는 경기
   for (let minute = 1; minute <= maxMinutes; minute++) {
     // 매 분마다 랜덤 숫자 계산
-    const currentTeamChance = Math.random() * 200; // 0 ~ 200 사이의 값 (현재 팀의 골 확률)
-    const opponentTeamChance = Math.random() * 200; // 0 ~ 200 사이의 값 (상대 팀의 골 확률)
+    const currentTeamChance = Math.floor(Math.random() * 200) + 1; // 1부터 200까지의 정수
+    const opponentTeamChance = Math.floor(Math.random() * 200) + 1; // 1부터 200까지의 정수
 
     // 현재 팀의 골 확률을 능력치 기반으로 비교
     if (currentTeamChance < currentTeamAverage) {
@@ -168,7 +167,7 @@ export async function calculateMMR(
     opponentMMRChange = change.loss * -1;
   }
 
-  // 현재 계정과 상대 계정의 MMR을 업데이트
+  // 현재 계정과 상대 계정의 MMR을 가져오기
   const currentAccount = await prisma.accounts.findUnique({
     where: { account_id: currentAccountId },
   });
@@ -176,20 +175,25 @@ export async function calculateMMR(
     where: { account_id: opponentAccountId },
   });
 
-  const updatedCurrentAccount = await prisma.accounts.update({
+  // MMR 변화 후 계산
+  const updatedCurrentMMR = currentAccount.mmr + currentMMRChange;
+  const updatedOpponentMMR = opponentAccount.mmr + opponentMMRChange;
+
+  // MMR 업데이트
+  await prisma.accounts.update({
     where: { account_id: currentAccountId },
-    data: { mmr: currentAccount.mmr + currentMMRChange },
+    data: { mmr: updatedCurrentMMR },
   });
 
-  const updatedOpponentAccount = await prisma.accounts.update({
+  await prisma.accounts.update({
     where: { account_id: opponentAccountId },
-    data: { mmr: opponentAccount.mmr + opponentMMRChange },
+    data: { mmr: updatedOpponentMMR },
   });
 
   return {
-    updatedCurrentAccount,
-    updatedOpponentAccount,
     currentMMRChange,
     opponentMMRChange,
+    updatedCurrentMMR,
+    updatedOpponentMMR,
   };
 }
