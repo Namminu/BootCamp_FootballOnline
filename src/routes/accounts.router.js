@@ -77,8 +77,8 @@ router.post("/sign-up", async (req, res) => {
       message: "가입에 성공했습니다. 환영합니다!",
       data: result,
     });
-  } catch (error) {
-    return res.status(500).json({ message: "회원가입 에러가 발생했습니다" });
+  } catch (err) {
+    next(err)
   }
 });
 
@@ -113,9 +113,8 @@ router.post("/login", async (req, res) => {
       message: "로그인 성공!",
       token,
     });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "로그인 에러가 발생했습니다" });
+  } catch (err) {
+    next(err)
   }
 });
 
